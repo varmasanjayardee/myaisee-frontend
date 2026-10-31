@@ -1,0 +1,225 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --background: oklch(0.9850 0 0);
+  --foreground: oklch(0.2050 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.2050 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.2050 0 0);
+  --primary: #0A80FF;
+  --primary-foreground: oklch(0.9850 0 0);
+  --secondary: oklch(0.9400 0 0);
+  --secondary-foreground: oklch(0.2500 0 0);
+  --muted: oklch(0.9700 0 0);
+  --muted-foreground: oklch(0.4400 0 0);
+  --accent: oklch(0.9200 0.0400 272);
+  --accent-foreground: oklch(0.2100 0.0600 268);
+  --destructive: oklch(0.6300 0.1900 23.0300);
+  --destructive-foreground: oklch(0.9850 0 0);
+  --border: oklch(0.9200 0 0);
+  --input: oklch(0.9400 0 0);
+  --ring: #0A80FF;
+  --chart-1: oklch(0.9200 0.0400 272);
+  --chart-2: oklch(0.7500 0.1300 269);
+  --chart-3: #0A80FF;
+  --chart-4: oklch(0.4200 0.1500 266);
+  --chart-5: oklch(0.2100 0.0600 268);
+  --sidebar: oklch(0.9850 0 0);
+  --sidebar-foreground: oklch(0.2050 0 0);
+  --sidebar-primary: #0A80FF;
+  --sidebar-primary-foreground: oklch(0.9850 0 0);
+  --sidebar-accent: oklch(0.9200 0.0400 272);
+  --sidebar-accent-foreground: oklch(0.2100 0.0600 268);
+  --sidebar-border: oklch(0.9200 0 0);
+  --sidebar-ring: #0A80FF;
+  /* fonts come from next/font in app/layout.tsx */
+  --font-sans: var(--font-inter), sans-serif;
+  --font-serif: var(--font-cormorant), ui-serif, serif;
+  --font-mono: var(--font-geist-mono), monospace;
+  --radius: 0.5rem;
+  --shadow-x: 0.25px;
+  --shadow-y: 1px;
+  --shadow-blur: 3px;
+  --shadow-spread: 0px;
+  --shadow-opacity: 0.15;
+  --shadow-color: oklch(0.2571 0.1161 272.24);
+  --shadow-2xs: 0.25px 1px 3px 0px hsl(236.5829 64.2250% 21.4383% / 0.07);
+  --shadow-xs: 0.25px 1px 3px 0px hsl(236.5829 64.2250% 21.4383% / 0.07);
+  --shadow-sm: 0.25px 1px 3px 0px hsl(236.5829 64.2250% 21.4383% / 0.15), 0.25px 1px 2px -1px hsl(236.5829 64.2250% 21.4383% / 0.15);
+  --shadow: 0.25px 1px 3px 0px hsl(236.5829 64.2250% 21.4383% / 0.15), 0.25px 1px 2px -1px hsl(236.5829 64.2250% 21.4383% / 0.15);
+  --shadow-md: 0.25px 1px 3px 0px hsl(236.5829 64.2250% 21.4383% / 0.15), 0.25px 2px 4px -1px hsl(236.5829 64.2250% 21.4383% / 0.15);
+  --shadow-lg: 0.25px 1px 3px 0px hsl(236.5829 64.2250% 21.4383% / 0.15), 0.25px 4px 6px -1px hsl(236.5829 64.2250% 21.4383% / 0.15);
+  --shadow-xl: 0.25px 1px 3px 0px hsl(236.5829 64.2250% 21.4383% / 0.15), 0.25px 8px 10px -1px hsl(236.5829 64.2250% 21.4383% / 0.15);
+  --shadow-2xl: 0.25px 1px 3px 0px hsl(236.5829 64.2250% 21.4383% / 0.38);
+  --navy: #1B3254;
+  --paper: #EEEEEE;
+  /* Dashboard accent; the shell overrides these per user (lib/themes.ts accentVars) */
+  --brand: #0A80FF;
+  --brand-hover: #0066D6;
+  --brand-soft: #E0EEFF;
+  --brand-foreground: #FFFFFF;
+  --maroon: oklch(0.4300 0.1450 27);
+  --tracking-normal: 0em;
+  --spacing: 0.25rem;
+}
+
+/*
+ * Dark theme, after Material Design's dark theme guidance (m2.material.io/design/color/dark-theme):
+ * - Surfaces are dark grey #121212, not black; elevation lightens a surface with a white
+ *   overlay: 0dp 0%, 1dp 5%, 2dp 7%, 3dp 8%, 4dp 9%, 6dp 11%, 8dp 12%, 12dp 14%, 16dp 15%, 24dp 16%.
+ * - "On" colours are white at 87% (high emphasis), 60% (medium) and 38% (disabled).
+ * - States are overlays of the content colour: hover 4%, selected/dragged 8%, focus 12%,
+ *   pressed 16%; disabled containers and outlines 12% white.
+ * - Colour is a limited, desaturated accent (the brand's 200 tone, set per role in
+ *   lib/themes.ts accentCss); bright colour never fills a large surface.
+ * - Error: Material's method (light error #B00020 under a white overlay) taken to 54%,
+ *   #DB8A98, so it passes AA 4.5:1 up to the 24dp surface; Material's 40% (#CF6679) doesn't.
+ */
+.dark {
+  --surface: #121212;
+  --overlay-1dp: color-mix(in srgb, #fff 5%, var(--surface));
+  --overlay-2dp: color-mix(in srgb, #fff 7%, var(--surface));
+  --overlay-8dp: color-mix(in srgb, #fff 12%, var(--surface));
+  --overlay-16dp: color-mix(in srgb, #fff 15%, var(--surface));
+  --overlay-24dp: color-mix(in srgb, #fff 16%, var(--surface));
+
+  --background: var(--surface);
+  --foreground: rgb(255 255 255 / 0.87);
+  --card: var(--overlay-1dp);
+  --card-foreground: rgb(255 255 255 / 0.87);
+  --popover: var(--overlay-8dp);
+  --popover-foreground: rgb(255 255 255 / 0.87);
+  /* Overridden per role by accentCss; this is Blue 200 for pages outside a dashboard */
+  --primary: oklch(from #0A80FF 0.82 min(c, 0.09) h);
+  --primary-foreground: rgb(0 0 0 / 0.87);
+  --secondary: rgb(255 255 255 / 0.12);
+  --secondary-foreground: rgb(255 255 255 / 0.87);
+  --muted: rgb(255 255 255 / 0.08);
+  --muted-foreground: rgb(255 255 255 / 0.6);
+  --accent: rgb(255 255 255 / 0.12);
+  --accent-foreground: rgb(255 255 255 / 0.87);
+  --destructive: #db8a98;
+  --destructive-foreground: rgb(0 0 0 / 0.87);
+  --border: rgb(255 255 255 / 0.12);
+  --input: rgb(255 255 255 / 0.12);
+  --ring: var(--primary);
+  --chart-1: oklch(0.8200 0.0900 268);
+  --chart-2: oklch(0.7400 0.0900 266);
+  --chart-3: oklch(0.8200 0.0900 250);
+  --chart-4: oklch(0.8800 0.0600 269);
+  --chart-5: oklch(0.9200 0.0400 272);
+  --sidebar: var(--overlay-1dp);
+  --sidebar-foreground: rgb(255 255 255 / 0.87);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: rgb(0 0 0 / 0.87);
+  --sidebar-accent: rgb(255 255 255 / 0.12);
+  --sidebar-accent-foreground: rgb(255 255 255 / 0.87);
+  --sidebar-border: rgb(255 255 255 / 0.12);
+  --sidebar-ring: var(--primary);
+
+  /* Shadows stay dark: a cast shadow, never a glow */
+  --shadow-2xs: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.4), 0 1px 2px -1px rgb(0 0 0 / 0.4);
+  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.4), 0 1px 2px -1px rgb(0 0 0 / 0.4);
+  --shadow-md: 0 2px 4px 0 rgb(0 0 0 / 0.45), 0 2px 4px -1px rgb(0 0 0 / 0.45);
+  --shadow-lg: 0 4px 8px 0 rgb(0 0 0 / 0.5), 0 4px 6px -1px rgb(0 0 0 / 0.5);
+  --shadow-xl: 0 8px 16px 0 rgb(0 0 0 / 0.5), 0 8px 10px -1px rgb(0 0 0 / 0.5);
+  --shadow-2xl: 0 16px 32px 0 rgb(0 0 0 / 0.6);
+
+  /* Saturated reds hard-coded as text-red-600 etc. vibrate on dark: use the dark error colour */
+  --color-red-500: var(--destructive);
+  --color-red-600: var(--destructive);
+  --color-red-700: var(--destructive);
+  --color-red-800: var(--destructive);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-navy: var(--navy);
+  --color-maroon: var(--maroon);
+  --color-paper: var(--paper);
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-foreground: var(--brand-foreground);
+
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --font-serif: var(--font-serif);
+  --font-heading: var(--font-sans);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --shadow-2xs: var(--shadow-2xs);
+  --shadow-xs: var(--shadow-xs);
+  --shadow-sm: var(--shadow-sm);
+  --shadow: var(--shadow);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-xl: var(--shadow-xl);
+  --shadow-2xl: var(--shadow-2xl);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}
+
+/* The visit pass "Visited" stamp lands once: pressed down from slightly above */
+@keyframes stamp {
+  from {
+    opacity: 0;
+    transform: rotate(-12deg) scale(1.6);
+  }
+  to {
+    opacity: 1;
+    transform: rotate(-12deg) scale(1);
+  }
+}
