@@ -114,7 +114,7 @@ export function ApplicationDetailView({ id }: { id: number }) {
               {app.first_name} {app.last_name}
             </h1>
             <p className="mt-1 text-muted-foreground">
-              {[app.grade, app.academic_year, data.campus, app.reference].filter(Boolean).join(" · ")}
+              {[app.grade, app.academic_year_name, data.campus, app.reference].filter(Boolean).join(" · ")}
             </p>
             <p className="mt-2 flex flex-wrap items-center gap-2 text-sm">
               <span className="font-medium">{stepLabel(app.current_step)}</span>

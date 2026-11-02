@@ -114,7 +114,7 @@ export function ApplicationForm({ family, child, startAt, onDone }: { family: Fa
 
 type FormValues = { values: Values; rows: Values[] };
 
-const emptyOf = (field: FormField) => (field.type === "toggle" ? false : field.type === "chips" ? [] : field.options === "campuses" ? null : "");
+const emptyOf = (field: FormField) => (field.type === "toggle" ? false : field.type === "chips" ? [] : field.options === "campuses" || field.options === "academic_years" ? null : "");
 
 const rulesOf = (field: FormField) =>
   field.type === "tel"
@@ -159,7 +159,7 @@ function SectionEditor({
 }) {
   const save = useSaveSection(family.id);
   const campuses = useOptions().data?.campuses ?? [];
-  const { control, handleSubmit, setError } = useForm<FormValues>({ defaultValues: initialValues(section, family, child) });
+  const { control, handleSubmit, setError, setValue } = useForm<FormValues>({ defaultValues: initialValues(section, family, child) });
   const rows = useFieldArray({ control, name: "rows" });
   const index = APPLICATION_SECTIONS.indexOf(section);
 
@@ -195,7 +195,7 @@ function SectionEditor({
     }
   });
 
-  const answers = (prefix: "values" | `rows.${number}`, fields: FormField[]) =>
+  const answers = (prefix: "values" | `rows.${number}`, fields: FormField[], values?: Values) =>
     fields.map((field) =>
       field.type === "file" ? (
         <FileInput key={field.key} field={field} leadId={family.id} child={child} />
@@ -206,7 +206,18 @@ function SectionEditor({
           name={`${prefix}.${field.key}` as `values.${string}`}
           rules={rulesOf(field)}
           render={({ field: input, fieldState }) => (
-            <FieldInput field={field} value={input.value} onChange={input.onChange} campuses={campuses} error={fieldState.error?.message} />
+            <FieldInput
+              field={field}
+              value={input.value}
+              onChange={(value) => {
+                input.onChange(value);
+                // A new campus has its own academic years
+                if (prefix === "values" && field.key === "campus") setValue("values.academic_year", null);
+              }}
+              campuses={campuses}
+              years={campuses.find((c) => c.id === values?.campus)?.academic_years ?? []}
+              error={fieldState.error?.message}
+            />
           )}
         />
       )
@@ -250,7 +261,7 @@ function SectionEditor({
             )}
           </>
         ) : (
-          <SectionAnswers control={control} section={section} child={child} render={(fields) => answers("values", fields)} />
+          <SectionAnswers control={control} section={section} child={child} render={(fields, values) => answers("values", fields, values)} />
         )}
       </div>
 
@@ -265,10 +276,10 @@ function SectionEditor({
 }
 
 // Watches only what `when` conditions need, so toggles show and hide their follow-ups
-function SectionAnswers({ control, section, child, render }: { control: Control<FormValues>; section: FormSection; child: FamilyChild; render: (fields: FormField[]) => React.ReactNode }) {
+function SectionAnswers({ control, section, child, render }: { control: Control<FormValues>; section: FormSection; child: FamilyChild; render: (fields: FormField[], values: Values) => React.ReactNode }) {
   const values = useWatch({ control, name: "values" });
   const uploaded = Object.fromEntries(child.documents.map((d) => [d.kind, d]));
-  return <div className="space-y-5">{render(visibleFields(section, { ...values, ...uploaded }))}</div>;
+  return <div className="space-y-5">{render(visibleFields(section, { ...values, ...uploaded }), values)}</div>;
 }
 
 function RepeatRow({ control, index, section, render }: { control: Control<FormValues>; index: number; section: FormSection; render: (fields: FormField[]) => React.ReactNode }) {
@@ -286,6 +297,7 @@ function FieldInput({
   value,
   onChange,
   campuses,
+  years,
   error,
   disabled,
 }: {
@@ -293,11 +305,19 @@ function FieldInput({
   value: unknown;
   onChange: (value: unknown) => void;
   campuses: { id: number; name: string }[];
+  /** The chosen campus's academic years, for options: "academic_years" */
+  years: { id: number; name: string }[];
   error?: string;
   disabled?: boolean;
 }) {
   const id = useId();
-  const options = field.options === "campuses" ? campuses.map((c) => ({ value: String(c.id), label: c.name.trim() })) : (field.options ?? []).map(optionOf);
+  const byId = field.options === "campuses" || field.options === "academic_years";
+  const options =
+    field.options === "campuses"
+      ? campuses.map((c) => ({ value: String(c.id), label: c.name.trim() }))
+      : field.options === "academic_years"
+        ? years.map((y) => ({ value: String(y.id), label: y.name }))
+        : (field.options ?? []).map(optionOf);
   const label = (
     <>
       {field.label}
@@ -342,7 +362,7 @@ function FieldInput({
           aria-invalid={!!error}
           disabled={disabled}
           value={value == null ? "" : String(value)}
-          onChange={(e) => onChange(field.options === "campuses" ? (e.target.value ? Number(e.target.value) : null) : e.target.value)}
+          onChange={(e) => onChange(byId ? (e.target.value ? Number(e.target.value) : null) : e.target.value)}
         >
           <option value="">Choose</option>
           {options.map((o) => (

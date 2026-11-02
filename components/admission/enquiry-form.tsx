@@ -5,22 +5,14 @@ import type { AxiosError } from "axios";
 import { Loader2Icon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { useToday } from "@/hooks/use-today";
 import { cn } from "@/lib/utils";
 import { useCreateEnquiry, useOptions, type EnquiryInput } from "@/services/admission.service";
 import { inputClass } from "./side-drawer";
-
-/** "2026-10-31" -> ["2026-27", "2027-28", "2028-29"]; admissions mostly fill next year */
-function academicYears(today: string | null) {
-  const year = today ? Number(today.slice(0, 4)) : 2026;
-  return [0, 1, 2].map((i) => `${year + i}-${String((year + i + 1) % 100).padStart(2, "0")}`);
-}
 
 /** Lead capture for calls, walk-ins and events: the basics, then the family takes it from there */
 export function EnquiryForm({ onDone }: { onDone: () => void }) {
   const options = useOptions();
   const create = useCreateEnquiry();
-  const years = academicYears(useToday());
   const [form, setForm] = useState<EnquiryInput>({
     first_name: "",
     last_name: "",
@@ -28,12 +20,14 @@ export function EnquiryForm({ onDone }: { onDone: () => void }) {
     email: "",
     campus: 0,
     grade: "",
-    academic_year: years[1],
+    academic_year: 0,
     channel: "phone",
     message: "",
     send_link: true,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  // The campus's own academic years (schools.AcademicYear)
+  const years = options.data?.campuses.find((c) => c.id === form.campus)?.academic_years ?? [];
   const set = (patch: Partial<EnquiryInput>) => {
     setForm((f) => ({ ...f, ...patch }));
     // Editing a field clears its error
@@ -97,7 +91,7 @@ export function EnquiryForm({ onDone }: { onDone: () => void }) {
             {field(
               "campus",
               "Campus",
-              <select className={inputClass} value={form.campus || ""} onChange={(e) => set({ campus: Number(e.target.value) })} {...invalid("campus")}>
+              <select className={inputClass} value={form.campus || ""} onChange={(e) => set({ campus: Number(e.target.value), academic_year: 0 })} {...invalid("campus")}>
                 <option value="">Choose</option>
                 {options.data?.campuses.map((c) => (
                   <option key={c.id} value={c.id}>
@@ -121,10 +115,11 @@ export function EnquiryForm({ onDone }: { onDone: () => void }) {
             {field(
               "academic_year",
               "Academic year",
-              <select className={inputClass} value={form.academic_year} onChange={(e) => set({ academic_year: e.target.value })} {...invalid("academic_year")}>
+              <select className={inputClass} value={form.academic_year || ""} onChange={(e) => set({ academic_year: Number(e.target.value) })} disabled={!form.campus} {...invalid("academic_year")}>
+                <option value="">{form.campus && !years.length ? "None open" : "Choose"}</option>
                 {years.map((y) => (
-                  <option key={y} value={y}>
-                    {y}
+                  <option key={y.id} value={y.id}>
+                    {y.name}
                   </option>
                 ))}
               </select>

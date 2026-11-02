@@ -170,10 +170,24 @@ export function useFeePlans() {
   });
 }
 
+export type FeeKind = "registration" | "admission";
+
+/** A child's custom fee plans (at most one per kind) */
+export function useChildFeePlans(childId: number) {
+  return useQuery({
+    queryKey: [...admissionKeys.feePlans, "child", childId],
+    queryFn: () => api.get(`${base}/fee-plans/`, { params: { child: childId } }).then((r) => z.array(feePlanSchema).parse(r.data)),
+  });
+}
+
 export interface FeePlanInput {
-  campus: number;
-  academic_year: string;
-  grade: string;
+  kind: FeeKind;
+  /** A custom plan for this child; campus, year and grade then come from the child */
+  child: number | null;
+  // Default plans only: a custom plan takes all three from the child
+  campus?: number;
+  academic_year?: number;
+  grade?: string;
   terms_per_year: number;
   notes: string;
   items: Omit<FeeItem, "id" | "payable_at" | "annual_amount">[];
@@ -222,7 +236,7 @@ export interface EnquiryInput {
   email: string;
   campus: number;
   grade: string;
-  academic_year: string;
+  academic_year: number;
   channel: string;
   message: string;
   send_link: boolean;
@@ -279,7 +293,8 @@ export type FamilyChild = Record<string, unknown> & {
   current_step: number;
   outcome: Outcome;
   grade: string;
-  academic_year: string;
+  academic_year: number | null;
+  academic_year_name: string | null;
   documents: { kind: string; original_name: string; url: string | null; status: string; reupload_note: string }[];
   reference: string;
   date_of_birth: string | null;
@@ -333,7 +348,10 @@ export function useFamilyFees(leadId: number, childId: number) {
     queryKey: ["admission", "fees", childId],
     queryFn: () =>
       api.get(`${family(leadId)}/children/${childId}/fees/`).then(
-        (r) => r.data as { registration: { total: string }; admission: { total: string }; plan: { campus: string; grade: string; academic_year: string } }
+        (r) =>
+          r.data as Record<FeeKind, { plan_id: number | null; custom: boolean; total: string; items: FeeItem[] }> & {
+            plan: { campus: string; grade: string; academic_year: string; terms_per_year: number };
+          }
       ),
     retry: false,
   });

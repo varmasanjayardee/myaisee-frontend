@@ -159,7 +159,7 @@ function ChildJourney({ child, family, onEdit }: { child: FamilyChild; family: F
             {app.first_name} {app.last_name}
           </h2>
           <p className="text-sm text-muted-foreground">
-            {[app.grade, app.academic_year, data.campus].filter(Boolean).join(", ") || "Grade and campus not chosen yet"}
+            {[app.grade, app.academic_year_name, data.campus].filter(Boolean).join(", ") || "Grade and campus not chosen yet"}
           </p>
         </div>
         <div className="flex items-center gap-2">

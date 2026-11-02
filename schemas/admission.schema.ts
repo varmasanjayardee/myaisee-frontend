@@ -148,7 +148,8 @@ export const applicationDetailSchema = z.object({
       first_name: z.string(),
       last_name: z.string(),
       grade: z.string(),
-      academic_year: z.string(),
+      academic_year: z.number().nullable(),
+      academic_year_name: z.string().nullable(),
       reference: z.string(),
       current_step: z.number(),
       outcome,
@@ -221,12 +222,22 @@ export type VisitRow = z.infer<typeof visitRowSchema>;
 
 const choice = z.object({ value: z.string(), label: z.string() });
 
+/** A campus with its academic years still open for admission (keyed-backend schools.AcademicYear) */
+export const campusSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  academic_years: z.array(z.object({ id: z.number(), name: z.string() })),
+});
+export type CampusOption = z.infer<typeof campusSchema>;
+
 export const optionsSchema = z.object({
-  campuses: z.array(z.object({ id: z.number(), name: z.string() })),
+  campuses: z.array(campusSchema),
   grades: z.array(z.object({ value: z.string(), stage: z.string() })),
   stages: z.array(choice),
   steps: z.array(z.object({ value: z.number(), label: z.string() })),
-  fee_types: z.array(choice),
+  /** only_in: the one kind of fee plan the type belongs to; null fits either */
+  fee_types: z.array(choice.extend({ only_in: z.enum(["registration", "admission"]).nullable() })),
+  fee_plan_kinds: z.array(z.object({ value: z.enum(["registration", "admission"]), label: z.string() })),
   frequencies: z.array(choice),
   document_kinds: z.array(choice),
   channels: z.array(choice),
@@ -251,9 +262,14 @@ export const feeItemSchema = z.object({
 
 export const feePlanSchema = z.object({
   id: z.number(),
+  /** Paid at step 2 (registration) or step 7 (admission) */
+  kind: z.enum(["registration", "admission"]),
+  /** Set on a custom plan: that child's own fee, over the default */
+  child: z.number().nullable(),
   campus: z.number(),
   campus_name: z.string(),
-  academic_year: z.string(),
+  academic_year: z.number().nullable(),
+  academic_year_name: z.string().nullable(),
   grade: z.string(),
   stage: z.string().nullable(),
   terms_per_year: z.number(),

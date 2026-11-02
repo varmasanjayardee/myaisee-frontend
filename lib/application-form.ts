@@ -24,8 +24,8 @@ export interface FormField {
   label: string;
   type: "text" | "email" | "tel" | "date" | "textarea" | "select" | "seg" | "chips" | "toggle" | "file";
   required?: boolean;
-  /** "campuses" is filled from the API */
-  options?: readonly Option[] | "campuses";
+  /** Filled from the API: "campuses", or "academic_years" (the chosen campus's schools.AcademicYear rows) */
+  options?: readonly Option[] | "campuses" | "academic_years";
   help?: string;
   /** Shown (and required) only when this returns true */
   when?: (values: Values) => boolean;
@@ -83,8 +83,8 @@ export const APPLICATION_SECTIONS: FormSection[] = [
       { key: "mother_tongue", label: "Mother tongue", type: "select", required: true, options: LANGUAGES },
       { key: "home_languages", label: "Languages spoken at home", type: "chips", options: LANGUAGES.slice(0, 8) },
       { key: "grade", label: "Applying for", type: "select", required: true, options: GRADES },
-      { key: "academic_year", label: "Academic year", type: "select", required: true, options: ["2027-28", "2026-27 (mid-session)"] },
       { key: "campus", label: "Campus", type: "select", required: true, options: "campuses" },
+      { key: "academic_year", label: "Academic year", type: "select", required: true, options: "academic_years", help: "Choose the campus first" },
       { key: "child_photo", label: "Recent photograph of the child", type: "file", required: true, help: "Used on the visit pass and the Atlas ID" },
     ],
   },

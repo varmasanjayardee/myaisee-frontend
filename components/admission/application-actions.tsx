@@ -3,15 +3,19 @@
 import { useState } from "react";
 import Link from "next/link";
 import { format, formatDistanceToNowStrict, parseISO } from "date-fns";
-import { BanknoteIcon, CheckIcon, CopyIcon, KeyRoundIcon, LinkIcon, Loader2Icon, PencilLineIcon, UploadIcon } from "lucide-react";
+import { BanknoteIcon, CheckIcon, CopyIcon, KeyRoundIcon, LinkIcon, Loader2Icon, PencilLineIcon, RotateCcwIcon, UploadIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useToday } from "@/hooks/use-today";
 import { formatCurrency, isClosed, OUTCOMES } from "@/lib/admission";
 import { cn } from "@/lib/utils";
 import type { AccountsCreated, ApplicationDetail } from "@/schemas/admission.schema";
+import { FeePlanForm } from "./fee-plans";
+import { SideDrawer } from "./side-drawer";
 import {
   useCheckIn,
+  useChildFeePlans,
+  useDeleteFeePlan,
   useConfirmForFamily,
   useCreateAccounts,
   useDecide,
@@ -121,6 +125,10 @@ function PaymentPanel({ app, leadId, kind }: { app: App; leadId: number; kind: "
   const fee = kind === "registration" ? "registration fee" : "admission fee";
   const fees = useFamilyFees(leadId, app.id);
   const total = fees.data?.[kind].total;
+  const group = fees.data?.[kind];
+  const custom = useChildFeePlans(app.id).data?.find((p) => p.kind === kind) ?? null;
+  const useDefault = useDeleteFeePlan();
+  const [editing, setEditing] = useState(false);
 
   return (
     <Panel title={`Waiting for the ${fee}${total ? ` of ${formatCurrency(total)}` : ""}`}>
@@ -142,7 +150,42 @@ function PaymentPanel({ app, leadId, kind }: { app: App; leadId: number; kind: "
           . {attempts.length > 1 && `${attempts.length} attempts so far.`} Call to help them retry.
         </p>
       )}
+      {group && group.items.length > 0 && (
+        <ul className="mt-3 space-y-1 text-sm">
+          {group.items.map((item) => (
+            <li key={item.id} className="flex justify-between gap-4">
+              <span>
+                {item.label}
+                {item.is_optional && <span className="text-muted-foreground"> (optional, not in the total)</span>}
+              </span>
+              <span className="tabular-nums">{formatCurrency(item.annual_amount ?? item.amount)}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+      {/* A custom fee replaces the campus default for this child only */}
+      <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
+        <span className="text-muted-foreground">{group?.custom ? `Custom ${fee} for ${app.first_name}.` : group?.plan_id ? `Campus default ${fee}.` : `No ${fee} plan for their campus, year and grade.`}</span>
+        <Button size="sm" variant="outline" onClick={() => setEditing(true)}>
+          <PencilLineIcon />
+          {custom ? "Edit custom fee" : "Set a custom fee"}
+        </Button>
+        {custom && (
+          <Button size="sm" variant="ghost" disabled={useDefault.isPending} onClick={() => useDefault.mutate(custom.id)}>
+            <RotateCcwIcon />
+            Use the default
+          </Button>
+        )}
+      </div>
       {total && <TakePayment leadId={leadId} childId={app.id} kind={kind} />}
+      <SideDrawer
+        open={editing}
+        onOpenChange={setEditing}
+        title={`${custom ? "Edit" : "Set"} ${app.first_name}'s ${fee}`}
+        description={`Only ${app.first_name} pays this; the campus default stays for everyone else.`}
+      >
+        {editing && <FeePlanForm plan={custom} child={app.id} kind={kind} copy={group?.items} onDone={() => setEditing(false)} />}
+      </SideDrawer>
     </Panel>
   );
 }

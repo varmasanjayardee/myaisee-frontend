@@ -82,7 +82,7 @@ export function FamilyCard({
     : [{ relationship: "parent", name: `${family.first_name} ${family.last_name}`.trim(), mobile: family.phone_number, email: family.email }];
   const grade = child?.grade ? `${child.grade}${GRADE_STAGE_LABEL[child.grade] ? ` (${GRADE_STAGE_LABEL[child.grade]})` : ""}` : "";
   const facts = child
-    ? [`${child.first_name} ${child.last_name}`.trim(), grade, child.academic_year, family.locality as string, ageAtStart(child.date_of_birth, child.academic_year)]
+    ? [`${child.first_name} ${child.last_name}`.trim(), grade, child.academic_year_name, family.locality as string, ageAtStart(child.date_of_birth, child.academic_year_name ?? "")]
     : [`No child added yet`];
 
   return (
