@@ -106,8 +106,11 @@ const paymentSchema = z.object({
   kind: z.enum(["registration", "admission"]),
   amount: z.string(),
   status: z.string(),
+  /** ICICI for online, "offline" at the desk, "receipt" when the family uploaded a UPI or bank receipt */
+  gateway: z.string(),
   gateway_transaction_id: z.string(),
   gateway_payment_mode: z.string(),
+  receipt_url: z.string().nullable(),
   failure_reason: z.string(),
   paid_at: z.string().nullable(),
   created_at: z.string(),

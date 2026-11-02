@@ -365,6 +365,13 @@ export function usePaymentLink(leadId: number, childId: number) {
   });
 }
 
+/** A family's uploaded UPI or bank receipt: approving completes the fee step, rejecting sends the note back */
+export const useReviewReceipt = () =>
+  useDeskAction(
+    (vars: { id: number; action: "approve" | "reject"; note?: string }) => api.post(`${base}/payments/${vars.id}/${vars.action}/`, { note: vars.note ?? "" }),
+    (r: unknown) => ((r as { data: { status: string } }).data.status === "success" ? "Receipt approved. The fee is paid." : "Receipt rejected. The family sees your note.")
+  );
+
 export const useOfflinePayment = (leadId: number, childId: number) =>
   useDeskAction(
     (vars: { kind: "registration" | "admission"; method: string; reference: string }) =>

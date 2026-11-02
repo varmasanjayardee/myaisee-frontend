@@ -23,6 +23,7 @@ import {
   useFamilySlots,
   useOfferForFamily,
   useOfflinePayment,
+  useReviewReceipt,
   useOptions,
   usePaymentLink,
   useSetJoiningDate,
@@ -122,6 +123,8 @@ function Panel({ title, tone, children }: { title: string; tone?: "closed"; chil
 function PaymentPanel({ app, leadId, kind }: { app: App; leadId: number; kind: "registration" | "admission" }) {
   const attempts = app.payments.filter((p) => p.kind === kind);
   const latest = attempts[0];
+  // The family paid by UPI or bank transfer and sent a receipt: the step waits on this check
+  const receipt = attempts.find((p) => p.gateway === "receipt" && p.status === "pending");
   const fee = kind === "registration" ? "registration fee" : "admission fee";
   const fees = useFamilyFees(leadId, app.id);
   const total = fees.data?.[kind].total;
@@ -132,7 +135,9 @@ function PaymentPanel({ app, leadId, kind }: { app: App; leadId: number; kind: "
 
   return (
     <Panel title={`Waiting for the ${fee}${total ? ` of ${formatCurrency(total)}` : ""}`}>
-      {!latest ? (
+      {receipt ? (
+        <ReceiptReview payment={receipt} />
+      ) : !latest ? (
         <p className="text-sm text-muted-foreground">
           No payment started yet. If they can&apos;t see a fee, check there&apos;s a{" "}
           <Link href="/admission/fee-plans" className="font-medium text-brand hover:underline">
@@ -177,7 +182,7 @@ function PaymentPanel({ app, leadId, kind }: { app: App; leadId: number; kind: "
           </Button>
         )}
       </div>
-      {total && <TakePayment leadId={leadId} childId={app.id} kind={kind} />}
+      {total && !receipt && <TakePayment leadId={leadId} childId={app.id} kind={kind} />}
       <SideDrawer
         open={editing}
         onOpenChange={setEditing}
@@ -187,6 +192,64 @@ function PaymentPanel({ app, leadId, kind }: { app: App; leadId: number; kind: "
         {editing && <FeePlanForm plan={custom} child={app.id} kind={kind} copy={group?.items} onDone={() => setEditing(false)} />}
       </SideDrawer>
     </Panel>
+  );
+}
+
+/** Approve (the fee is paid, the step completes) or reject with a note the family sees */
+function ReceiptReview({ payment }: { payment: App["payments"][number] }) {
+  const review = useReviewReceipt();
+  const [rejecting, setRejecting] = useState(false);
+  const [note, setNote] = useState("");
+  const busy = review.isPending;
+
+  return (
+    <div className="rounded-xl border bg-background p-4">
+      <h3 className="text-sm font-semibold">Check the family&apos;s receipt</h3>
+      <p className="mt-1 text-sm">
+        {formatCurrency(payment.amount)} by {payment.gateway_payment_mode}, reference <span className="font-mono">{payment.gateway_transaction_id}</span>, sent{" "}
+        {short(payment.created_at)}.{" "}
+        {payment.receipt_url && (
+          <a href={payment.receipt_url} target="_blank" rel="noreferrer" className="font-medium text-brand hover:underline">
+            View receipt
+          </a>
+        )}
+      </p>
+      <p className="mt-1 text-xs text-muted-foreground">Match it against the bank statement before approving. Approving marks the fee paid and moves them on.</p>
+
+      {rejecting ? (
+        <form
+          className="mt-3 space-y-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            review.mutate({ id: payment.id, action: "reject", note: note.trim() });
+          }}
+        >
+          <label className="block text-sm">
+            <span className="font-medium">What&apos;s wrong with it?</span> <span className="text-muted-foreground">(the family sees this)</span>
+            <input autoFocus className={cn(field, "mt-1.5")} value={note} onChange={(e) => setNote(e.target.value)} placeholder="The amount doesn't match, no payment with this reference..." />
+          </label>
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="ghost" size="sm" onClick={() => setRejecting(false)}>
+              Back
+            </Button>
+            <Button type="submit" variant="destructive" size="sm" disabled={busy}>
+              {busy && <Loader2Icon className="animate-spin" />}
+              Reject receipt
+            </Button>
+          </div>
+        </form>
+      ) : (
+        <div className="mt-3 flex flex-wrap gap-2">
+          <Button size="sm" disabled={busy} onClick={() => review.mutate({ id: payment.id, action: "approve" })}>
+            {busy ? <Loader2Icon className="animate-spin" /> : <CheckIcon />}
+            Approve
+          </Button>
+          <Button size="sm" variant="outline" disabled={busy} onClick={() => setRejecting(true)}>
+            Reject
+          </Button>
+        </div>
+      )}
+    </div>
   );
 }
 

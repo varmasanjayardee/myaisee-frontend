@@ -18,6 +18,7 @@ import {
   MoonIcon,
   PhoneIcon,
   ReceiptIndianRupeeIcon,
+  ReceiptTextIcon,
   ScaleIcon,
   UsersIcon,
   ZapIcon,
@@ -101,6 +102,7 @@ export function AdmissionDesk() {
 }
 
 const ACTION_ICONS: Record<string, LucideIcon> = {
+  receipts: ReceiptTextIcon,
   visits_today: MapPinnedIcon,
   decide: ScaleIcon,
   joining_date: CalendarCheckIcon,
