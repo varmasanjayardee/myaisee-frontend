@@ -40,7 +40,7 @@ export const dashboardSchema = z.object({
 export type Dashboard = z.infer<typeof dashboardSchema>;
 export type QueueAction = Dashboard["actions"][number];
 
-const page = <T extends z.ZodType>(item: T) =>
+export const page = <T extends z.ZodType>(item: T) =>
   z.object({ count: z.number(), next: z.string().nullable(), previous: z.string().nullable(), results: z.array(item) });
 
 export const applicationRowSchema = z.object({

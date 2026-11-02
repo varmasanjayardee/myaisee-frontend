@@ -16,6 +16,7 @@ export const STAFF_ROLE_LABEL: Record<number, string> = {
   4: "Transport",
   5: "Coordinator",
   6: "Admission Counsellor",
+  7: "Visitor Manager",
 };
 
 /** One per folder in app/(dashboard)/ */
@@ -27,7 +28,8 @@ export type Dashboard =
   | "admin"
   | "transport"
   | "coordinator"
-  | "admission";
+  | "admission"
+  | "visitor";
 
 const STAFF_DASHBOARD: Record<number, Dashboard> = {
   1: "mentor",
@@ -36,6 +38,7 @@ const STAFF_DASHBOARD: Record<number, Dashboard> = {
   4: "transport",
   5: "coordinator",
   6: "admission",
+  7: "visitor",
 };
 
 /** role picks the user type; for staff, staff_role picks the dashboard */
@@ -63,6 +66,7 @@ export const DASHBOARDS: Record<Dashboard, { title: string }> = {
   transport: { title: "Transport" },
   coordinator: { title: "Coordinator" },
   admission: { title: "Admissions" },
+  visitor: { title: "Visitors" },
 };
 
 export const dashboardHref = (dashboard: Dashboard, section = "") =>

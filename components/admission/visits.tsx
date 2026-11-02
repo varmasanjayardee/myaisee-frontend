@@ -1,11 +1,12 @@
 "use client";
 
-import { useDeferredValue, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { format, parseISO } from "date-fns";
 import { AlertTriangleIcon, CalendarX2Icon, CheckIcon, EarIcon, Loader2Icon, SearchIcon, XIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useDebounce } from "@/hooks/use-debounce";
 import { useToday } from "@/hooks/use-today";
 import { errorStatus } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -22,25 +23,40 @@ const STATUS = [
   { value: "attended", label: "Arrived" },
 ];
 
-/** Every visit, paginated: tabs by when, filters in the URL, check-in for today's families */
-export function VisitsList() {
+/**
+ * Every visit, paginated: tabs by when, filters in the URL, check-in for today's families.
+ * `gate`: the visitor manager's copy, opening on today, with no links into counsellor pages.
+ */
+export function VisitsList({ gate = false }: { gate?: boolean }) {
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
   const today = useToday();
   const whenParam = params.get("when");
-  const when = (WHEN as readonly string[]).includes(whenParam ?? "") ? (whenParam as VisitFilters["when"]) : "upcoming";
+  const fallback = gate ? "today" : "upcoming";
+  const when = (WHEN as readonly string[]).includes(whenParam ?? "") ? (whenParam as VisitFilters["when"]) : fallback;
   const status = params.get("status") ?? "";
   const date = params.get("date") ?? "";
   const page = Number(params.get("page")) || 1;
   const sizeParam = Number(params.get("page_size"));
   const pageSize = (PAGE_SIZES as readonly number[]).includes(sizeParam) ? sizeParam : DEFAULT_PAGE_SIZE;
-  const [query, setQuery] = useState(params.get("q") ?? "");
-  const q = useDeferredValue(query.trim());
+  const q = params.get("q") ?? "";
+  const [query, setQuery] = useState(q);
+  const debounced = useDebounce(query.trim(), 350);
 
   const visits = useVisits({ when, status, date, q, page, page_size: pageSize });
 
   // A stale URL past the last page (the list shrank): drop back to page 1
+  // The search reaches the URL (and the API) once typing pauses: one request per search, not per key
+  useEffect(() => {
+    if (debounced === (params.get("q") ?? "")) return;
+    const next = new URLSearchParams(params);
+    if (debounced) next.set("q", debounced);
+    else next.delete("q");
+    next.delete("page");
+    router.replace(`${pathname}?${next}`, { scroll: false });
+  }, [debounced, params, pathname, router]);
+
   const pastEnd = page > 1 && errorStatus(visits.error) === 404;
   useEffect(() => {
     if (!pastEnd) return;
@@ -65,15 +81,15 @@ export function VisitsList() {
   return (
     <div className="mx-auto max-w-7xl space-y-6">
       <PageHeader
-        title="Visits"
+        title={gate ? "Admission visits" : "Visits"}
         subtitle={counts ? `${counts.today} today · ${counts.upcoming} upcoming · ${counts.past} past` : "Families coming to campus"}
       />
 
       <PillTabs
         id="visit-tab"
         label="When"
-        value={when ?? "upcoming"}
-        onChange={(value) => setParams({ when: value === "upcoming" ? "" : value })}
+        value={when ?? fallback}
+        onChange={(value) => setParams({ when: value === fallback ? "" : value })}
         tabs={WHEN.map((w) => ({ value: w, label: WHEN_LABEL[w], count: counts?.[w] }))}
       />
 
@@ -84,10 +100,7 @@ export function VisitsList() {
             <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
             <input
               value={query}
-              onChange={(e) => {
-                setQuery(e.target.value);
-                setParams({ q: e.target.value.trim() });
-              }}
+              onChange={(e) => setQuery(e.target.value)}
               placeholder="Search child, parent, phone or gate pass"
               className="h-9 w-full rounded-lg border bg-background pr-8 pl-9 text-sm shadow-xs outline-none focus:border-ring focus:ring-3 focus:ring-ring/30"
             />
@@ -95,10 +108,7 @@ export function VisitsList() {
               <button
                 type="button"
                 aria-label="Clear search"
-                onClick={() => {
-                  setQuery("");
-                  setParams({ q: "" });
-                }}
+                onClick={() => setQuery("")}
                 className="absolute top-1/2 right-2 -translate-y-1/2 p-0.5 text-muted-foreground hover:text-foreground"
               >
                 <XIcon className="size-4" />
@@ -142,15 +152,21 @@ export function VisitsList() {
             {visits.error.message}
           </EmptyState>
         ) : !visits.data?.results.length ? (
-          <EmptyState icon={CalendarX2Icon} title={q ? `Nothing matches "${q}"` : `No ${when === "all" ? "" : `${WHEN_LABEL[when ?? "upcoming"].toLowerCase()} `}visits`}>
-            <Link href="/admission/slots" className="font-medium text-brand hover:underline">
-              Open visit slots
-            </Link>{" "}
-            so families can book.
+          <EmptyState icon={CalendarX2Icon} title={q ? `Nothing matches "${q}"` : `No ${when === "all" ? "" : `${WHEN_LABEL[when ?? fallback].toLowerCase()} `}visits`}>
+            {gate ? (
+              "Families who book a campus visit show here on the day."
+            ) : (
+              <>
+                <Link href="/admission/slots" className="font-medium text-brand hover:underline">
+                  Open visit slots
+                </Link>{" "}
+                so families can book.
+              </>
+            )}
           </EmptyState>
         ) : (
           <>
-            <VisitTable rows={visits.data.results} today={today} />
+            <VisitTable rows={visits.data.results} today={today} linked={!gate} />
             <DataPagination
               noun="visits"
               page={page}
@@ -166,7 +182,7 @@ export function VisitsList() {
   );
 }
 
-function VisitTable({ rows, today }: { rows: VisitRow[]; today: string | null }) {
+function VisitTable({ rows, today, linked }: { rows: VisitRow[]; today: string | null; linked: boolean }) {
   const checkIn = useCheckIn();
 
   return (
@@ -193,13 +209,15 @@ function VisitTable({ rows, today }: { rows: VisitRow[]; today: string | null })
                   <span className="block text-xs text-muted-foreground tabular-nums">{v.start_time}</span>
                 </td>
                 <td className="px-3 py-3.5">
-                  <Link href={`/admission/applications/${v.child_id}`} className="group flex items-center gap-3 outline-none">
-                    <Avatar name={v.child} />
-                    <span className="min-w-0">
-                      <span className="block truncate font-medium group-hover:text-brand group-focus-visible:underline">{v.child}</span>
-                      <span className="block text-xs text-muted-foreground">{v.grade || "—"}</span>
+                  {linked ? (
+                    <Link href={`/admission/applications/${v.child_id}`} className="group flex items-center gap-3 outline-none">
+                      <Student v={v} />
+                    </Link>
+                  ) : (
+                    <span className="flex items-center gap-3">
+                      <Student v={v} />
                     </span>
-                  </Link>
+                  )}
                 </td>
                 <td className="px-3 py-3.5">
                   <span className="block truncate">{v.parent}</span>
@@ -241,5 +259,17 @@ function VisitTable({ rows, today }: { rows: VisitRow[]; today: string | null })
         </tbody>
       </table>
     </div>
+  );
+}
+
+function Student({ v }: { v: VisitRow }) {
+  return (
+    <>
+      <Avatar name={v.child} />
+      <span className="min-w-0">
+        <span className="block truncate font-medium group-hover:text-brand group-focus-visible:underline">{v.child}</span>
+        <span className="block text-xs text-muted-foreground">{v.grade || "—"}</span>
+      </span>
+    </>
   );
 }

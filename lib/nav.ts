@@ -37,6 +37,7 @@ import {
   HashIcon,
   HeartIcon,
   HomeIcon,
+  IdCardIcon,
   HouseIcon,
   InboxIcon,
   IndianRupeeIcon,
@@ -473,6 +474,13 @@ const ADMISSION: NavEntry[] = [
   { name: "Visit slots", href: "/admission/slots", icon: CalendarDaysIcon },
 ];
 
+const VISITOR: NavEntry[] = [
+  { name: "Gate", href: "/visitor", icon: HomeIcon },
+  { heading: "Today" },
+  { name: "Visitors", href: "/visitor/visitors", icon: IdCardIcon },
+  { name: "Admission visits", href: "/visitor/admissions", icon: CalendarCheckIcon },
+];
+
 export const NAV: Record<Dashboard, NavEntry[]> = {
   student: STUDENT,
   guardian: GUARDIAN,
@@ -482,6 +490,7 @@ export const NAV: Record<Dashboard, NavEntry[]> = {
   finance: FINANCE,
   transport: TRANSPORT,
   admission: ADMISSION,
+  visitor: VISITOR,
 };
 
 /** A dashboard's nav for this user (guardian Payments is campus-specific) */

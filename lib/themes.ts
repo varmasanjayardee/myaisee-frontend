@@ -45,6 +45,7 @@ export const ACCENTS = {
   // MyAISee-only roles
   gold: accent("Gold", "#D97706", "#FEF3C7"),
   rose: accent("Rose", "#E11D48", "#FFE4E6"),
+  violet: accent("Violet", "#7C3AED", "#EDE9FE"),
 } as const;
 
 export type Accent = keyof typeof ACCENTS;
@@ -63,6 +64,7 @@ export const ROLE_ACCENTS: Record<Dashboard, Accent[]> = {
   finance: ["teal"],
   transport: ["gold", ...SHARED],
   admission: ["rose", ...SHARED],
+  visitor: ["violet", ...SHARED],
 };
 
 /** The user's pick if this dashboard offers it, else the dashboard's default */
