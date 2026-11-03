@@ -4,6 +4,7 @@ import {
   FileTextIcon,
   HeartPulseIcon,
   HouseIcon,
+  MessageCircleQuestionIcon,
   PenLineIcon,
   PhoneIcon,
   SparklesIcon,
@@ -43,6 +44,10 @@ export interface FormSection {
 }
 
 const LANGUAGES = ["English", "Hindi", "Punjabi", "Bengali", "Tamil", "Telugu", "Marathi", "Gujarati", "Malayalam", "Kannada", "Urdu", "Other"];
+const YES_NO = [
+  { value: "yes", label: "Yes" },
+  { value: "no", label: "No" },
+];
 export const GRADES = [
   "Pre-Nursery", "Nursery", "Reception",
   "Year 1", "Year 2", "Year 3", "Year 4", "Year 5",
@@ -250,6 +255,41 @@ export const APPLICATION_SECTIONS: FormSection[] = [
       },
       { key: "school_priorities", label: "What matters most to you in a school?", type: "textarea" },
       { key: "notes_for_counsellor", label: "Anything else you would like us to know", type: "textarea", help: "Optional, and read by your counsellor only" },
+    ],
+  },
+  {
+    id: "questions",
+    title: "Questions for parents",
+    icon: MessageCircleQuestionIcon,
+    scope: "child",
+    fields: [
+      { key: "reason_to_join", label: "Why would you like your child to join Ardee?", type: "textarea", required: true },
+      { key: "family_note", label: "If offered admission, what would you like the school to know about you?", type: "textarea", required: true },
+      { key: "parent_works_in_school", label: "Either parent owns or works in a school", type: "toggle" },
+      {
+        key: "parent_school_details",
+        label: "Name, role and address of the school",
+        type: "textarea",
+        required: true,
+        when: (v) => !!v.parent_works_in_school,
+      },
+      { key: "father_work", label: "Father: the nature of your work and key responsibilities at your organisation", type: "textarea", required: true },
+      { key: "mother_work", label: "Mother: the nature of your work and key responsibilities at your organisation", type: "textarea", required: true },
+      {
+        key: "consent_programs",
+        label: "We will support and consent to the school's programmes, internal and external",
+        type: "toggle",
+        required: true,
+        help: "Such as camps, MUNs, college bridge programme visits and others the school feels will enrich your child's education",
+      },
+      {
+        key: "confirm_workshops",
+        label: "We will attend the parent and school workshops",
+        type: "toggle",
+        help: "The school expects at least 80% attendance",
+      },
+      { key: "standardized_test", label: "Has your child completed a standardised test? (for example SAT, Subject Aptitude Test)", type: "seg", required: true, options: YES_NO },
+      { key: "disciplinary_action", label: "Has any disciplinary action been taken on your child at a previous school?", type: "seg", required: true, options: YES_NO },
     ],
   },
   {

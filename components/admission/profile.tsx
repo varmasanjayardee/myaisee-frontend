@@ -98,7 +98,7 @@ export function StaffProfileView() {
           detail={`${w.visits_upcoming} coming up with you, ${w.visits_hosted} hosted`}
           href="/admission/visits"
         />
-        <Row icon={ScaleIcon} title="Decisions" detail={w.decisions ? `${plural(w.decisions, "decision")} made by you` : "Families waiting after their visit"} href="/admission/applications?step=5" />
+        <Row icon={ScaleIcon} title="Decisions" detail={w.decisions ? `${plural(w.decisions, "decision")} made by you` : "Families waiting after their visit"} href="/admission/applications?step=6" />
         <Row
           icon={ReceiptIndianRupeeIcon}
           title="Payments at the desk"

@@ -3,7 +3,7 @@ import { isClosed, OUTCOMES, STEPS, stepLabel, TONE_CLASS, TOTAL_STEPS, type Out
 import { cn } from "@/lib/utils";
 
 /**
- * Where one family is: ten stops, travelled ones filled in the dashboard accent, the
+ * Where one family is: eleven stops, travelled ones filled in the dashboard accent, the
  * current one ringed. A closed journey (rejected, declined…) ends in red where it stopped.
  */
 export function JourneyRail({ step, outcome, size = "sm" }: { step: number; outcome: Outcome; size?: "sm" | "lg" }) {
@@ -39,7 +39,7 @@ export function JourneyRail({ step, outcome, size = "sm" }: { step: number; outc
   }
 
   return (
-    <ol aria-label={label} className="grid grid-cols-10 gap-1">
+    <ol aria-label={label} className="grid grid-cols-11 gap-1">
       {STEPS.map(({ step: n, short, label: full }) => {
         const done = n < stop || step > TOTAL_STEPS;
         const current = n === stop && step <= TOTAL_STEPS;

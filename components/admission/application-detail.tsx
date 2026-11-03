@@ -62,6 +62,20 @@ const CHILD_SECTIONS: { title: string; fields: [string, string][] }[] = [
     ],
   },
   {
+    title: "Questions for parents",
+    fields: [
+      ["reason_to_join", "Why Ardee"],
+      ["family_note", "About the family"],
+      ["parent_school_details", "Parent's school"],
+      ["father_work", "Father's work"],
+      ["mother_work", "Mother's work"],
+      ["consent_programs", "Consents to school programmes"],
+      ["confirm_workshops", "Will attend workshops"],
+      ["standardized_test", "Standardised test"],
+      ["disciplinary_action", "Disciplinary action"],
+    ],
+  },
+  {
     title: "Declarations",
     fields: [
       ["declared_true", "Information is true"],

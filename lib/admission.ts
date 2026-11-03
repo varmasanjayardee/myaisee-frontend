@@ -9,6 +9,7 @@ import {
   ListChecksIcon,
   MailOpenIcon,
   MapPinnedIcon,
+  PencilLineIcon,
   ReceiptIndianRupeeIcon,
   ScaleIcon,
   WalletIcon,
@@ -19,19 +20,20 @@ export const STEPS = [
   { step: 2, label: "Registration fee", short: "Reg. fee", icon: ReceiptIndianRupeeIcon },
   { step: 3, label: "Slot booking", short: "Book", icon: CalendarPlusIcon },
   { step: 4, label: "Visit day", short: "Visit", icon: MapPinnedIcon },
-  { step: 5, label: "Under review", short: "Review", icon: ScaleIcon },
-  { step: 6, label: "Accept offer", short: "Offer", icon: MailOpenIcon },
-  { step: 7, label: "Admission fee", short: "Adm. fee", icon: WalletIcon },
-  { step: 8, label: "Before joining", short: "Joining", icon: ListChecksIcon },
-  { step: 9, label: "Account setup", short: "Accounts", icon: KeyRoundIcon },
-  { step: 10, label: "Account ready", short: "Ready", icon: BadgeCheckIcon },
+  { step: 5, label: "Aptitude test", short: "Test", icon: PencilLineIcon },
+  { step: 6, label: "Under review", short: "Review", icon: ScaleIcon },
+  { step: 7, label: "Accept offer", short: "Offer", icon: MailOpenIcon },
+  { step: 8, label: "Admission fee", short: "Adm. fee", icon: WalletIcon },
+  { step: 9, label: "Before joining", short: "Joining", icon: ListChecksIcon },
+  { step: 10, label: "Account setup", short: "Accounts", icon: KeyRoundIcon },
+  { step: 11, label: "Account ready", short: "Ready", icon: BadgeCheckIcon },
 ] as const;
 
 /** The journey's three stretches, as the desk groups them */
 export const PHASES = [
   { label: "Applying", steps: [1, 2, 3] },
-  { label: "Visit and decision", steps: [4, 5, 6] },
-  { label: "Joining", steps: [7, 8, 9, 10] },
+  { label: "Visit and decision", steps: [4, 5, 6, 7] },
+  { label: "Joining", steps: [8, 9, 10, 11] },
 ] as const;
 
 export const TOTAL_STEPS = STEPS.length;

@@ -258,7 +258,7 @@ function summarise(step: number, app: App, data: ApplicationDetail, family: Fami
     case 1:
       return app.current_step > 1 ? `Submitted with ${app.documents.length} documents` : `${formProgress(family, child)}% filled in`;
     case 2:
-    case 7: {
+    case 8: {
       const p = paid(app, step === 2 ? "registration" : "admission");
       return p ? `${formatCurrency(p.amount)} by ${p.gateway_payment_mode || "card"}${p.gateway_transaction_id ? `, ref ${p.gateway_transaction_id}` : ""}` : undefined;
     }
@@ -267,8 +267,10 @@ function summarise(step: number, app: App, data: ApplicationDetail, family: Fami
     case 4:
       return visit?.attended_at ? `Arrived ${format(parseISO(visit.attended_at), "h:mm a")}, pass ${visit.gate_pass_code}` : visit ? `Gate pass ${visit.gate_pass_code}` : undefined;
     case 5:
-      return app.reviewed_at ? `${OUTCOMES[app.outcome].label}${data.reviewed_by ? ` by ${data.reviewed_by}` : ""}` : undefined;
+      return app.aptitude_test_at ? `${day(app.aptitude_test_at)}, ${app.aptitude_test_mode === "online" ? "online" : "at the school"}` : undefined;
     case 6:
+      return app.reviewed_at ? `${OUTCOMES[app.outcome].label}${data.reviewed_by ? ` by ${data.reviewed_by}` : ""}` : undefined;
+    case 7:
       return app.offer_accepted_at
         ? `Accepted ${day(app.offer_accepted_at)}`
         : app.offer_declined_at
@@ -276,13 +278,13 @@ function summarise(step: number, app: App, data: ApplicationDetail, family: Fami
           : app.offer_expires_at
             ? `Open until ${day(app.offer_expires_at)}`
             : undefined;
-    case 8: {
+    case 9: {
       const items = app.requirements.filter((r) => r.owner === "parent");
       const left = items.filter((r) => r.status !== "done").length;
       return items.length ? `${items.length - left} of ${items.length} family items done${app.joining_date ? `, joins ${day(app.joining_date)}` : ""}` : undefined;
     }
-    case 9:
     case 10:
+    case 11:
       return app.atlas_accounts ? `Student login ${app.atlas_accounts.student.email}` : undefined;
   }
 }
@@ -302,7 +304,7 @@ function StepDetail({ step, app, data, onEdit }: { step: number; app: App; data:
       </div>
     );
 
-  if (step === 2 || step === 7) {
+  if (step === 2 || step === 8) {
     const kind = step === 2 ? "registration" : "admission";
     return (
       <ul className="space-y-1.5">
@@ -333,7 +335,23 @@ function StepDetail({ step, app, data, onEdit }: { step: number; app: App; data:
       </p>
     );
 
-  if (step === 5)
+  if (step === 5 && app.aptitude_test_at)
+    return (
+      <p>
+        {format(parseISO(app.aptitude_test_at), "EEE d MMM, h:mm a")}, {app.aptitude_test_mode === "online" ? "online on a video call" : "at the school"}
+        {app.aptitude_test_link && (
+          <>
+            {" · "}
+            <a href={app.aptitude_test_link} target="_blank" rel="noreferrer" className="font-medium text-brand hover:underline">
+              call link
+            </a>
+          </>
+        )}
+        .
+      </p>
+    );
+
+  if (step === 6)
     return (
       <div>
         <p>
@@ -345,7 +363,7 @@ function StepDetail({ step, app, data, onEdit }: { step: number; app: App; data:
       </div>
     );
 
-  if (step === 6)
+  if (step === 7)
     return (
       <p>
         Offer sent {app.offer_sent_at ? day(app.offer_sent_at) : ""}
@@ -355,7 +373,7 @@ function StepDetail({ step, app, data, onEdit }: { step: number; app: App; data:
       </p>
     );
 
-  if (step === 8)
+  if (step === 9)
     return (
       <ul className="space-y-1">
         {app.requirements.map((r) => (

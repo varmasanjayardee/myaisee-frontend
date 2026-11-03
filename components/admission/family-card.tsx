@@ -34,14 +34,18 @@ function status(child: FamilyChild | undefined, today: string | null): { text: s
         ? { text: "Visit today, watch arrivals", tone: "you" }
         : { text: visit ? `Visiting ${day(visit.date)}` : "Visit booked", tone: "good" };
     case 5:
-      return { text: child.outcome === "waitlisted" ? "On the waiting list" : "Waiting for your decision", tone: "you" };
+      return child.aptitude_test_at
+        ? { text: `Aptitude test ${day(child.aptitude_test_at)}`, tone: "you" }
+        : { text: "Schedule the aptitude test", tone: "you" };
     case 6:
-      return { text: "Offer sent, waiting for their answer", tone: "good" };
+      return { text: child.outcome === "waitlisted" ? "On the waiting list" : "Waiting for your decision", tone: "you" };
     case 7:
-      return { text: "Admission fee due", tone: "good" };
+      return { text: "Offer sent, waiting for their answer", tone: "good" };
     case 8:
-      return { text: "Before-joining checklist", tone: "good" };
+      return { text: "Admission fee due", tone: "good" };
     case 9:
+      return { text: "Before-joining checklist", tone: "good" };
+    case 10:
       return { text: "Ready for Atlas accounts", tone: "you" };
     default:
       return { text: "Enrolled", tone: "good" };

@@ -24,6 +24,8 @@ import {
   useOfferForFamily,
   useOfflinePayment,
   useReviewReceipt,
+  useAptitudeTestTaken,
+  useScheduleAptitudeTest,
   useOptions,
   usePaymentLink,
   useSetJoiningDate,
@@ -71,7 +73,7 @@ export function NextAction({ detail }: { detail: ApplicationDetail }) {
         </Panel>
       );
     case 2:
-    case 7:
+    case 8:
       return <PaymentPanel app={app} leadId={leadId} kind={step === 2 ? "registration" : "admission"} />;
     case 3:
       return (
@@ -88,12 +90,14 @@ export function NextAction({ detail }: { detail: ApplicationDetail }) {
     case 4:
       return <VisitPanel app={app} leadId={leadId} />;
     case 5:
-      return <DecisionPanel app={app} />;
+      return <AptitudePanel app={app} />;
     case 6:
+      return <DecisionPanel app={app} />;
+    case 7:
       return <OfferPanel app={app} leadId={leadId} />;
-    case 8:
-      return <JoiningPanel app={app} leadId={leadId} />;
     case 9:
+      return <JoiningPanel app={app} leadId={leadId} />;
+    case 10:
       return <AccountsPanel app={app} />;
     default:
       return (
@@ -477,13 +481,72 @@ const DECISIONS: { value: Decision; label: string; hint: string }[] = [
   { value: "not_offered", label: "Not offered", hint: "No seat; closes it" },
 ];
 
+// datetime-local wants "yyyy-MM-ddTHH:mm" in local time
+const localInput = (iso: string | null) => (iso ? format(parseISO(iso), "yyyy-MM-dd'T'HH:mm") : "");
+
+/** Step 5: set when and how the aptitude test happens, then mark it taken */
+function AptitudePanel({ app }: { app: App }) {
+  const schedule = useScheduleAptitudeTest(app.id);
+  const taken = useAptitudeTestTaken(app.id);
+  const [at, setAt] = useState(localInput(app.aptitude_test_at));
+  const [mode, setMode] = useState(app.aptitude_test_mode || "campus");
+  const [link, setLink] = useState(app.aptitude_test_link);
+  const changed = at !== localInput(app.aptitude_test_at) || mode !== app.aptitude_test_mode || (mode === "online" && link !== app.aptitude_test_link);
+
+  return (
+    <Panel title={app.aptitude_test_at ? `Aptitude test ${format(parseISO(app.aptitude_test_at), "EEE d MMM, h:mm a")}` : "Schedule the aptitude test"}>
+      <p className="text-sm text-muted-foreground">The family sees the time and place in Atlas. Once the test is done, mark it taken to move them to review.</p>
+      <form
+        className="mt-4 space-y-3"
+        onSubmit={(e) => {
+          e.preventDefault();
+          schedule.mutate({ aptitude_test_at: new Date(at).toISOString(), aptitude_test_mode: mode, aptitude_test_link: mode === "online" ? link : "" });
+        }}
+      >
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="text-sm">
+            <span className="font-medium">Date and time</span>
+            <input type="datetime-local" required value={at} onChange={(e) => setAt(e.target.value)} className={cn(field, "mt-1.5")} />
+          </label>
+          <label className="text-sm">
+            <span className="font-medium">Where</span>
+            <select value={mode} onChange={(e) => setMode(e.target.value as typeof mode)} className={cn(field, "mt-1.5")}>
+              <option value="campus">At the school</option>
+              <option value="online">Online (video call)</option>
+            </select>
+          </label>
+        </div>
+        {mode === "online" && (
+          <label className="block text-sm">
+            <span className="font-medium">Video call link</span>
+            <span className="text-muted-foreground"> (optional, add it later if you don&apos;t have it yet)</span>
+            <input type="url" value={link} onChange={(e) => setLink(e.target.value)} placeholder="https://meet.google.com/…" className={cn(field, "mt-1.5")} />
+          </label>
+        )}
+        <div className="flex flex-wrap gap-2">
+          <Button type="submit" variant={app.aptitude_test_at ? "outline" : "default"} disabled={!at || !changed || schedule.isPending}>
+            {schedule.isPending && <Loader2Icon className="animate-spin" />}
+            {app.aptitude_test_at ? "Save changes" : "Schedule test"}
+          </Button>
+          {app.aptitude_test_at && (
+            <Button type="button" disabled={changed || taken.isPending} onClick={() => taken.mutate()}>
+              {taken.isPending ? <Loader2Icon className="animate-spin" /> : <CheckIcon />}
+              Mark test taken
+            </Button>
+          )}
+        </div>
+      </form>
+    </Panel>
+  );
+}
+
 function DecisionPanel({ app }: { app: App }) {
   const decide = useDecide(app.id);
   const [choice, setChoice] = useState<Decision | null>(app.outcome === "waitlisted" ? "waiting_list" : null);
   const [note, setNote] = useState(app.review_note);
 
   return (
-    <Panel title={app.outcome === "waitlisted" ? "On the waiting list: decide again when a seat opens" : "Decide after the visit"}>
+    <Panel title={app.outcome === "waitlisted" ? "On the waiting list: decide again when a seat opens" : "Decide after the test"}>
       <fieldset>
         <legend className="sr-only">Decision</legend>
         <div className="grid gap-2 sm:grid-cols-4">

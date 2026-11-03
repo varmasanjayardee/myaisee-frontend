@@ -164,6 +164,9 @@ export const applicationDetailSchema = z.object({
       offer_declined_at: z.string().nullable(),
       offer_decline_reason: z.string(),
       joining_date: z.string().nullable(),
+      aptitude_test_at: z.string().nullable(),
+      aptitude_test_mode: z.enum(["campus", "online", ""]),
+      aptitude_test_link: z.string(),
       campus: z.number().nullable(),
       documents: z.array(documentSchema),
       payments: z.array(paymentSchema),
@@ -263,7 +266,7 @@ export const feeItemSchema = z.object({
 
 export const feePlanSchema = z.object({
   id: z.number(),
-  /** Paid at step 2 (registration) or step 7 (admission) */
+  /** Paid at step 2 (registration) or step 8 (admission) */
   kind: z.enum(["registration", "admission"]),
   /** Set on a custom plan: that child's own fee, over the default */
   child: z.number().nullable(),

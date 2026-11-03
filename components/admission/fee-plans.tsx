@@ -10,7 +10,7 @@ import { useDeleteFeePlan, useFeePlans, useOptions, useSaveFeePlan, type FeeKind
 import { inputClass, SideDrawer } from "./side-drawer";
 import { CARD, EmptyState, PageHeader } from "./ui";
 
-// Every line of a plan is paid together: registration plans at step 2, admission plans on accepting (step 7)
+// Every line of a plan is paid together: registration plans at step 2, admission plans on accepting (step 8)
 export const KIND_LABEL: Record<FeeKind, string> = {
   registration: "Registration fee",
   admission: "Admission fee",

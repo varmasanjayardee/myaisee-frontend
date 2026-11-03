@@ -134,13 +134,23 @@ export const useDecide = (id: number) =>
     "Decision saved. The family sees it now."
   );
 
+export const useScheduleAptitudeTest = (id: number) =>
+  useDeskAction(
+    (vars: { aptitude_test_at: string; aptitude_test_mode: "campus" | "online"; aptitude_test_link: string }) =>
+      api.patch(`${base}/applications/${id}/aptitude-test/`, vars),
+    "Aptitude test scheduled. The family sees it now."
+  );
+
+export const useAptitudeTestTaken = (id: number) =>
+  useDeskAction(() => api.post(`${base}/applications/${id}/aptitude-test/`), "Test marked taken. Moved to review.");
+
 export const useCheckIn = () =>
-  useDeskAction((bookingId: number) => api.post(`${base}/visits/${bookingId}/check-in/`), "Checked in. Moved to review.");
+  useDeskAction((bookingId: number) => api.post(`${base}/visits/${bookingId}/check-in/`), "Checked in. Next: the aptitude test.");
 
 export const useSetJoiningDate = (id: number) =>
   useDeskAction(
     (joining_date: string) => api.patch(`${base}/applications/${id}/joining/`, { joining_date }).then((r) => r.data as { current_step: number }),
-    (r) => (r.current_step === 9 ? "Joining date set. Ready for accounts." : "Joining date set")
+    (r) => (r.current_step === 10 ? "Joining date set. Ready for accounts." : "Joining date set")
   );
 
 export const useUpdateRequirement = () =>
@@ -298,6 +308,7 @@ export type FamilyChild = Record<string, unknown> & {
   documents: { kind: string; original_name: string; url: string | null; status: string; reupload_note: string }[];
   reference: string;
   date_of_birth: string | null;
+  aptitude_test_at: string | null;
   visit: { status: string; slot: { date: string; start_time: string } } | null;
 };
 
