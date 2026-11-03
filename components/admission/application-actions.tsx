@@ -330,7 +330,6 @@ function SlotPicker({ leadId, childId, action, onDone }: { leadId: number; child
   const slots = useFamilySlots(leadId, childId);
   const visit = useVisitForFamily(leadId, childId);
   const [slot, setSlot] = useState<number | null>(null);
-  const [hearingAid, setHearingAid] = useState(false);
 
   if (slots.isLoading) return <p className="mt-4 text-sm text-muted-foreground">Loading slots…</p>;
   if (!slots.data?.length) return <p className="mt-4 text-sm font-medium">No open slots for their campus right now.</p>;
@@ -340,7 +339,7 @@ function SlotPicker({ leadId, childId, action, onDone }: { leadId: number; child
       className="mt-4"
       onSubmit={(e) => {
         e.preventDefault();
-        if (slot) visit.mutate({ action, slot, hearing_aid: hearingAid }, { onSuccess: onDone });
+        if (slot) visit.mutate({ action, slot }, { onSuccess: onDone });
       }}
     >
       <fieldset>
@@ -365,10 +364,6 @@ function SlotPicker({ leadId, childId, action, onDone }: { leadId: number; child
           ))}
         </div>
       </fieldset>
-      <label className="mt-3 flex items-center gap-2 text-sm">
-        <input type="checkbox" className="size-4" checked={hearingAid} onChange={(e) => setHearingAid(e.target.checked)} />
-        Someone visiting uses a hearing aid
-      </label>
       <Button type="submit" className="mt-3" disabled={!slot || visit.isPending}>
         {visit.isPending && <Loader2Icon className="animate-spin" />}
         {action === "book" ? "Book visit" : "Move visit"}
@@ -444,7 +439,6 @@ function VisitPanel({ app, leadId }: { app: App; leadId: number }) {
     <Panel title={isToday ? "Visiting today" : `Visit on ${format(parseISO(visit.slot.date), "EEE d MMM")}`}>
       <p className="text-sm text-muted-foreground">
         {visit.slot.start_time.slice(0, 5)} · {visit.slot.visit_type_label} · {visit.slot.gate} · pass {visit.gate_pass_code}
-        {visit.hearing_aid && " · someone uses a hearing aid"}
       </p>
       {isToday && (
         <Button className="mt-4" onClick={() => checkIn.mutate(visit.id)} disabled={checkIn.isPending}>

@@ -329,7 +329,7 @@ function StepDetail({ step, app, data, onEdit }: { step: number; app: App; data:
         {day(app.visit.slot.date)}, {app.visit.slot.start_time.slice(0, 5)}. {app.visit.slot.visit_type_label} at {app.visit.slot.gate || "the main gate"}
         {app.visit.slot.staff_names.length > 0 && `, with ${app.visit.slot.staff_names.join(" and ")}`}. Gate pass {app.visit.gate_pass_code}
         {app.visit.rescheduled_count > 0 && `, moved ${app.visit.rescheduled_count}×`}
-        {app.visit.hearing_aid && ". Someone uses a hearing aid"}.
+.
       </p>
     );
 

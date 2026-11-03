@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { format, parseISO } from "date-fns";
-import { AlertTriangleIcon, CalendarX2Icon, CheckIcon, EarIcon, Loader2Icon, SearchIcon, XIcon } from "lucide-react";
+import { AlertTriangleIcon, CalendarX2Icon, CheckIcon, Loader2Icon, SearchIcon, XIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useToday } from "@/hooks/use-today";
@@ -230,12 +230,6 @@ function VisitTable({ rows, today, linked }: { rows: VisitRow[]; today: string |
                   <span className="block text-xs text-muted-foreground">
                     {[v.gate, v.staff.join(", ")].filter(Boolean).join(" · ")}
                   </span>
-                  {v.hearing_aid && (
-                    <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-800 ring-1 ring-amber-200 ring-inset dark:bg-amber-950 dark:text-amber-300 dark:ring-amber-900">
-                      <EarIcon className="size-3" />
-                      Hearing aid
-                    </span>
-                  )}
                 </td>
                 <td className="px-3 py-3.5 font-mono text-sm tracking-wider">{v.gate_pass_code}</td>
                 <td className="px-5 py-3.5 text-right">

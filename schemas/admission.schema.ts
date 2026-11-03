@@ -135,7 +135,6 @@ const visitSchema = z.object({
   id: z.number(),
   status: z.string(),
   slot: z.object({ date: z.string(), start_time: z.string(), visit_type_label: z.string(), gate: z.string(), staff_names: z.array(z.string()) }),
-  hearing_aid: z.boolean(),
   gate_pass_code: z.string(),
   rescheduled_count: z.number(),
   attended_at: z.string().nullable(),
@@ -213,7 +212,6 @@ export const visitRowSchema = z.object({
   gate: z.string(),
   campus: z.string(),
   staff: z.array(z.string()),
-  hearing_aid: z.boolean(),
   gate_pass_code: z.string(),
   attended_at: z.string().nullable(),
 });

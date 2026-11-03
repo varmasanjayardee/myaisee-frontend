@@ -401,13 +401,13 @@ export interface FamilySlot {
 
 export const useVisitForFamily = (leadId: number, childId: number) =>
   useDeskAction(
-    (vars: { action: "book" | "reschedule" | "cancel"; slot?: number; hearing_aid?: boolean }) => {
+    (vars: { action: "book" | "reschedule" | "cancel"; slot?: number }) => {
       const url = `${family(leadId)}/children/${childId}/visit/`;
       return vars.action === "cancel"
         ? api.delete(url)
         : vars.action === "book"
-          ? api.post(url, { slot: vars.slot, hearing_aid: vars.hearing_aid })
-          : api.patch(url, { slot: vars.slot, hearing_aid: vars.hearing_aid });
+          ? api.post(url, { slot: vars.slot })
+          : api.patch(url, { slot: vars.slot });
     },
     "Visit updated"
   );
