@@ -289,9 +289,9 @@ export function FeePlanForm({
                 <span className="font-medium">Grade</span>
                 <select className={cn(inputClass, "mt-1.5")} value={form.grade} onChange={(e) => setForm({ ...form, grade: e.target.value })}>
                   <option value="">Every grade</option>
-                  {options.data?.grades.map((g) => (
+                  {(options.data?.campuses.find((c) => c.id === form.campus)?.grades ?? options.data?.grades)?.map((g) => (
                     <option key={g.value} value={g.value}>
-                      {g.value}
+                      {g.label}
                     </option>
                   ))}
                 </select>

@@ -91,7 +91,7 @@ export function EnquiryForm({ onDone }: { onDone: () => void }) {
             {field(
               "campus",
               "Campus",
-              <select className={inputClass} value={form.campus || ""} onChange={(e) => set({ campus: Number(e.target.value), academic_year: 0 })} {...invalid("campus")}>
+              <select className={inputClass} value={form.campus || ""} onChange={(e) => set({ campus: Number(e.target.value), academic_year: 0, grade: "" })} {...invalid("campus")}>
                 <option value="">Choose</option>
                 {options.data?.campuses.map((c) => (
                   <option key={c.id} value={c.id}>
@@ -105,9 +105,9 @@ export function EnquiryForm({ onDone }: { onDone: () => void }) {
               "Grade",
               <select className={inputClass} value={form.grade} onChange={(e) => set({ grade: e.target.value })} {...invalid("grade")}>
                 <option value="">Choose</option>
-                {options.data?.grades.map((g) => (
+                {options.data?.campuses.find((c) => c.id === form.campus)?.grades.map((g) => (
                   <option key={g.value} value={g.value}>
-                    {g.value}
+                    {g.label}
                   </option>
                 ))}
               </select>

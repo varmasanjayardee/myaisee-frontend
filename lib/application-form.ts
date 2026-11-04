@@ -25,9 +25,13 @@ export interface FormField {
   label: string;
   type: "text" | "email" | "tel" | "date" | "textarea" | "select" | "seg" | "chips" | "toggle" | "file";
   required?: boolean;
-  /** Filled from the API: "campuses", or "academic_years" (the chosen campus's schools.AcademicYear rows) */
-  options?: readonly Option[] | "campuses" | "academic_years";
+  /** Filled from the API: "campuses", or "academic_years"/"grades" (the chosen campus's schools.AcademicYear rows / the grades it admits) */
+  options?: readonly Option[] | "campuses" | "academic_years" | "grades";
   help?: string;
+  /** select: type to search the options; only an option can be kept */
+  search?: boolean;
+  /** chips: values can also be typed in */
+  addable?: boolean;
   /** Shown (and required) only when this returns true */
   when?: (values: Values) => boolean;
 }
@@ -43,24 +47,54 @@ export interface FormSection {
   fields: FormField[];
 }
 
+// GOV.UK list of nationalities (gov.uk/government/publications/nationalities), Indian first
+const NATIONALITIES = [
+  "Indian",
+  "Overseas Citizen of India",
+  "Afghan", "Albanian", "Algerian", "American", "Andorran", "Angolan", "Anguillan", "Citizen of Antigua and Barbuda", "Argentine", "Armenian",
+  "Australian", "Austrian", "Azerbaijani", "Bahamian", "Bahraini", "Bangladeshi", "Barbadian", "Belarusian", "Belgian", "Belizean", "Beninese",
+  "Bermudian", "Bhutanese", "Bolivian", "Citizen of Bosnia and Herzegovina", "Botswanan", "Brazilian", "British", "British Virgin Islander",
+  "Bruneian", "Bulgarian", "Burkinan", "Burmese", "Burundian", "Cambodian", "Cameroonian", "Canadian", "Cape Verdean", "Cayman Islander",
+  "Central African", "Chadian", "Chilean", "Chinese", "Colombian", "Comoran", "Congolese (Congo)", "Congolese (DRC)", "Cook Islander", "Costa Rican",
+  "Croatian", "Cuban", "Cymraes", "Cymro", "Cypriot", "Czech", "Danish", "Djiboutian", "Dominican", "Citizen of the Dominican Republic", "Dutch",
+  "East Timorese", "Ecuadorean", "Egyptian", "Emirati", "English", "Equatorial Guinean", "Eritrean", "Estonian", "Ethiopian", "Faroese", "Fijian",
+  "Filipino", "Finnish", "French", "Gabonese", "Gambian", "Georgian", "German", "Ghanaian", "Gibraltarian", "Greek", "Greenlandic", "Grenadian",
+  "Guamanian", "Guatemalan", "Citizen of Guinea-Bissau", "Guinean", "Guyanese", "Haitian", "Honduran", "Hong Konger", "Hungarian", "Icelandic",
+  "Indonesian", "Iranian", "Iraqi", "Irish", "Israeli", "Italian", "Ivorian", "Jamaican", "Japanese", "Jordanian", "Kazakh", "Kenyan", "Kittitian",
+  "Citizen of Kiribati", "Kosovan", "Kuwaiti", "Kyrgyz", "Lao", "Latvian", "Lebanese", "Liberian", "Libyan", "Liechtenstein citizen", "Lithuanian",
+  "Luxembourger", "Macanese", "Macedonian", "Malagasy", "Malawian", "Malaysian", "Maldivian", "Malian", "Maltese", "Marshallese", "Martiniquais",
+  "Mauritanian", "Mauritian", "Mexican", "Micronesian", "Moldovan", "Monegasque", "Mongolian", "Montenegrin", "Montserratian", "Moroccan", "Mosotho",
+  "Mozambican", "Namibian", "Nauruan", "Nepalese", "New Zealander", "Nicaraguan", "Nigerian", "Nigerien", "Niuean", "North Korean", "Northern Irish",
+  "Norwegian", "Omani", "Pakistani", "Palauan", "Palestinian", "Panamanian", "Papua New Guinean", "Paraguayan", "Peruvian", "Pitcairn Islander",
+  "Polish", "Portuguese", "Prydeinig", "Puerto Rican", "Qatari", "Romanian", "Russian", "Rwandan", "Salvadorean", "Sammarinese", "Samoan",
+  "Sao Tomean", "Saudi Arabian", "Scottish", "Senegalese", "Serbian", "Citizen of Seychelles", "Sierra Leonean", "Singaporean", "Slovak",
+  "Slovenian", "Solomon Islander", "Somali", "South African", "South Korean", "South Sudanese", "Spanish", "Sri Lankan", "St Helenian", "St Lucian",
+  "Stateless", "Sudanese", "Surinamese", "Swazi", "Swedish", "Swiss", "Syrian", "Taiwanese", "Tajik", "Tanzanian", "Thai", "Togolese", "Tongan",
+  "Trinidadian", "Tristanian", "Tunisian", "Turkish", "Turkmen", "Turks and Caicos Islander", "Tuvaluan", "Ugandan", "Ukrainian", "Uruguayan",
+  "Uzbek", "Vatican citizen", "Citizen of Vanuatu", "Venezuelan", "Vietnamese", "Vincentian", "Wallisian", "Welsh", "Yemeni", "Zambian",
+  "Zimbabwean",
+];
 const LANGUAGES = ["English", "Hindi", "Punjabi", "Bengali", "Tamil", "Telugu", "Marathi", "Gujarati", "Malayalam", "Kannada", "Urdu", "Other"];
 const YES_NO = [
   { value: "yes", label: "Yes" },
   { value: "no", label: "No" },
 ];
+/** Every grade, in order; same as GRADE_LABEL/GRADE_STAGE in keyed-backend admission/models.py. Each campus admits some of them (`campus.grades`) */
 export const GRADES = [
-  "Pre-Nursery", "Nursery", "Reception",
-  "Year 1", "Year 2", "Year 3", "Year 4", "Year 5",
-  "Year 6", "Year 7", "Year 8", "Year 9", "Year 10", "Year 11", "Year 12", "Year 13",
+  { value: "Early NIDO/NIDO", label: "Early NIDO/NIDO (8 to 18 months)", stage: "Early Years" },
+  { value: "Red", label: "Red (2+ years)", stage: "Early Years" },
+  { value: "Blue", label: "Blue (3+ years)", stage: "Early Years" },
+  { value: "Yellow", label: "Yellow (4+ years)", stage: "Early Years" },
+  { value: "EYFS", label: "EYFS (5+ years)", stage: "Early Years" },
+  ...Array.from({ length: 10 }, (_, i) => ({
+    value: `Year ${i + 1}`,
+    label: `Year ${i + 1}`,
+    stage: i < 6 ? "Primary" : i < 9 ? "Lower Secondary" : "Upper Secondary (IGCSE)",
+  })),
 ];
 
-/** Cambridge stage per grade; same as GRADE_STAGE in keyed-backend admission/models.py */
-export const GRADE_STAGE_LABEL: Record<string, string> = Object.fromEntries(
-  GRADES.map((g, i) => [
-    g,
-    i < 3 ? "Early Years" : i < 9 ? "Primary" : i < 12 ? "Lower Secondary" : i < 14 ? "Upper Secondary (IGCSE)" : "Advanced (AS & A Level)",
-  ])
-);
+/** Cambridge stage per grade */
+export const GRADE_STAGE_LABEL: Record<string, string> = Object.fromEntries(GRADES.map((g) => [g.value, g.stage]));
 
 export const APPLICATION_SECTIONS: FormSection[] = [
   {
@@ -69,6 +103,7 @@ export const APPLICATION_SECTIONS: FormSection[] = [
     icon: UserIcon,
     scope: "child",
     fields: [
+      { key: "campus", label: "Campus", type: "select", required: true, options: "campuses" },
       { key: "first_name", label: "First name, as on the birth certificate", type: "text", required: true },
       { key: "last_name", label: "Last name, as on the birth certificate", type: "text" },
       { key: "preferred_name", label: "Preferred name", type: "text" },
@@ -84,11 +119,10 @@ export const APPLICATION_SECTIONS: FormSection[] = [
           { value: "undisclosed", label: "Prefer not to say" },
         ],
       },
-      { key: "nationality", label: "Nationality", type: "select", required: true, options: ["Indian", "Overseas Citizen of India", "Other"] },
+      { key: "nationality", label: "Nationality", type: "select", required: true, search: true, options: NATIONALITIES },
       { key: "mother_tongue", label: "Mother tongue", type: "select", required: true, options: LANGUAGES },
-      { key: "home_languages", label: "Languages spoken at home", type: "chips", options: LANGUAGES.slice(0, 8) },
-      { key: "grade", label: "Applying for", type: "select", required: true, options: GRADES },
-      { key: "campus", label: "Campus", type: "select", required: true, options: "campuses" },
+      { key: "home_languages", label: "Languages spoken at home", type: "chips", required: true, addable: true, options: LANGUAGES.slice(0, 8) },
+      { key: "grade", label: "Applying for", type: "select", required: true, options: "grades", help: "Choose the campus first" },
       { key: "academic_year", label: "Academic year", type: "select", required: true, options: "academic_years", help: "Choose the campus first" },
       { key: "child_photo", label: "Recent photograph of the child", type: "file", required: true, help: "Used on the visit pass and the Atlas ID" },
     ],

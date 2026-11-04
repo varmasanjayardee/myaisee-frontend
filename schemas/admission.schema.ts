@@ -226,17 +226,19 @@ export type VisitRow = z.infer<typeof visitRowSchema>;
 
 const choice = z.object({ value: z.string(), label: z.string() });
 
-/** A campus with its academic years still open for admission (keyed-backend schools.AcademicYear) */
+/** A campus with its academic years still open for admission (keyed-backend schools.AcademicYear) and its grades */
 export const campusSchema = z.object({
   id: z.number(),
   name: z.string(),
   academic_years: z.array(z.object({ id: z.number(), name: z.string() })),
+  /** The grades it admits, in order */
+  grades: z.array(z.object({ value: z.string(), label: z.string(), stage: z.string() })),
 });
 export type CampusOption = z.infer<typeof campusSchema>;
 
 export const optionsSchema = z.object({
   campuses: z.array(campusSchema),
-  grades: z.array(z.object({ value: z.string(), stage: z.string() })),
+  grades: z.array(z.object({ value: z.string(), label: z.string(), stage: z.string() })),
   stages: z.array(choice),
   steps: z.array(z.object({ value: z.number(), label: z.string() })),
   /** only_in: the one kind of fee plan the type belongs to; null fits either */

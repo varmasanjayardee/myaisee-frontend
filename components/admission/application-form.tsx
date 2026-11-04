@@ -212,10 +212,15 @@ function SectionEditor({
               onChange={(value) => {
                 input.onChange(value);
                 // A new campus has its own academic years
-                if (prefix === "values" && field.key === "campus") setValue("values.academic_year", null);
+                if (prefix === "values" && field.key === "campus") {
+                  setValue("values.academic_year", null);
+                  // ...and admits its own grades
+                  if (!campuses.find((c) => c.id === value)?.grades.some((g) => g.value === values?.grade)) setValue("values.grade", "");
+                }
               }}
               campuses={campuses}
               years={campuses.find((c) => c.id === values?.campus)?.academic_years ?? []}
+              grades={campuses.find((c) => c.id === values?.campus)?.grades ?? []}
               error={fieldState.error?.message}
             />
           )}
@@ -298,6 +303,7 @@ function FieldInput({
   onChange,
   campuses,
   years,
+  grades,
   error,
   disabled,
 }: {
@@ -307,6 +313,8 @@ function FieldInput({
   campuses: { id: number; name: string }[];
   /** The chosen campus's academic years, for options: "academic_years" */
   years: { id: number; name: string }[];
+  /** The chosen campus's grades, for options: "grades" */
+  grades: { value: string; label: string }[];
   error?: string;
   disabled?: boolean;
 }) {
@@ -317,7 +325,9 @@ function FieldInput({
       ? campuses.map((c) => ({ value: String(c.id), label: c.name.trim() }))
       : field.options === "academic_years"
         ? years.map((y) => ({ value: String(y.id), label: y.name }))
-        : (field.options ?? []).map(optionOf);
+        : field.options === "grades"
+          ? grades
+          : (field.options ?? []).map(optionOf);
   const label = (
     <>
       {field.label}
@@ -355,7 +365,28 @@ function FieldInput({
   return (
     <Field data-invalid={!!error}>
       <FieldLabel htmlFor={id}>{label}</FieldLabel>
-      {field.type === "select" ? (
+      {field.type === "select" && field.search ? (
+        // Native search: typing filters the list; anything that isn't an option is dropped on leaving
+        <>
+          <Input
+            id={id}
+            list={`${id}-list`}
+            className="h-10 rounded-lg"
+            placeholder="Type to search"
+            aria-invalid={!!error}
+            disabled={disabled}
+            autoComplete="off"
+            value={String(value ?? "")}
+            onChange={(e) => onChange(e.target.value)}
+            onBlur={(e) => onChange(options.find((o) => o.value.toLowerCase() === e.target.value.trim().toLowerCase())?.value ?? "")}
+          />
+          <datalist id={`${id}-list`}>
+            {options.map((o) => (
+              <option key={o.value} value={o.value} />
+            ))}
+          </datalist>
+        </>
+      ) : field.type === "select" ? (
         <select
           id={id}
           className={control}
@@ -375,7 +406,7 @@ function FieldInput({
         <textarea id={id} rows={3} className={cn(control, "h-auto py-2")} aria-invalid={!!error} disabled={disabled} value={String(value ?? "")} onChange={(e) => onChange(e.target.value)} />
       ) : field.type === "seg" || field.type === "chips" ? (
         <div role="group" aria-label={field.label} className="flex flex-wrap gap-2">
-          {options.map((o) => {
+          {[...options, ...typedOf(field, options, value)].map((o) => {
             const list = (value as string[] | undefined) ?? [];
             const on = field.type === "seg" ? value === o.value : list.includes(o.value);
             // "None" can't sit alongside anything else
@@ -387,6 +418,22 @@ function FieldInput({
               </button>
             );
           })}
+          {field.addable && !disabled && (
+            <Input
+              aria-label={`Add to ${field.label.toLowerCase()}`}
+              placeholder="Type another and press Enter"
+              maxLength={50}
+              className="h-10 rounded-lg"
+              onKeyDown={(e) => {
+                if (e.key !== "Enter") return;
+                e.preventDefault();
+                const list = (value as string[] | undefined) ?? [];
+                const v = e.currentTarget.value.trim();
+                e.currentTarget.value = "";
+                if (v && list.length < 20 && !list.some((x) => x.toLowerCase() === v.toLowerCase())) onChange([...list, v]);
+              }}
+            />
+          )}
         </div>
       ) : (
         <Input id={id} type={field.type} className="h-10 rounded-lg" aria-invalid={!!error} disabled={disabled} autoComplete="off" value={String(value ?? "")} onChange={(e) => onChange(e.target.value)} />
@@ -396,6 +443,10 @@ function FieldInput({
     </Field>
   );
 }
+
+// chips answers typed in by hand, shown as their own pills
+const typedOf = (field: FormField, options: { value: string; label: string }[], value: unknown) =>
+  field.type === "chips" ? ((value as string[] | undefined) ?? []).filter((v) => !options.some((o) => o.value === v)).map((v) => ({ value: v, label: v })) : [];
 
 /** A document answer: uploads as soon as a file is chosen */
 export function FileInput({ field, leadId, child }: { field: Pick<FormField, "key" | "label" | "required" | "help">; leadId: number; child: FamilyChild }) {
