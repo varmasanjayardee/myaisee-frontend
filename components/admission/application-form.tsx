@@ -3,10 +3,11 @@
 import { useId, useState } from "react";
 import { Controller, useFieldArray, useForm, useWatch, type Control } from "react-hook-form";
 import type { AxiosError } from "axios";
-import { CameraIcon, ChevronLeftIcon, ChevronRightIcon, CircleCheckIcon, Loader2Icon, PlusIcon } from "lucide-react";
+import { CameraIcon, ChevronLeftIcon, ChevronRightIcon, CircleCheckIcon, Loader2Icon, PlusIcon, XIcon } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
+import { Combobox, ComboboxContent, ComboboxEmpty, ComboboxInput, ComboboxItem, ComboboxList } from "@/components/ui/combobox";
 import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
@@ -366,26 +367,19 @@ function FieldInput({
     <Field data-invalid={!!error}>
       <FieldLabel htmlFor={id}>{label}</FieldLabel>
       {field.type === "select" && field.search ? (
-        // Native search: typing filters the list; anything that isn't an option is dropped on leaving
-        <>
-          <Input
-            id={id}
-            list={`${id}-list`}
-            className="h-10 rounded-lg"
-            placeholder="Type to search"
-            aria-invalid={!!error}
-            disabled={disabled}
-            autoComplete="off"
-            value={String(value ?? "")}
-            onChange={(e) => onChange(e.target.value)}
-            onBlur={(e) => onChange(options.find((o) => o.value.toLowerCase() === e.target.value.trim().toLowerCase())?.value ?? "")}
-          />
-          <datalist id={`${id}-list`}>
-            {options.map((o) => (
-              <option key={o.value} value={o.value} />
-            ))}
-          </datalist>
-        </>
+        <Combobox items={options.map((o) => o.value)} value={value ? String(value) : null} onValueChange={(v) => onChange(v ?? "")} disabled={disabled}>
+          <ComboboxInput id={id} placeholder="Type to search" showClear={!!value} className="h-10 w-full rounded-lg" aria-invalid={!!error} disabled={disabled} />
+          <ComboboxContent>
+            <ComboboxEmpty>No match. Check the spelling.</ComboboxEmpty>
+            <ComboboxList>
+              {(item: string) => (
+                <ComboboxItem key={item} value={item}>
+                  {item}
+                </ComboboxItem>
+              )}
+            </ComboboxList>
+          </ComboboxContent>
+        </Combobox>
       ) : field.type === "select" ? (
         <select
           id={id}
@@ -406,22 +400,23 @@ function FieldInput({
         <textarea id={id} rows={3} className={cn(control, "h-auto py-2")} aria-invalid={!!error} disabled={disabled} value={String(value ?? "")} onChange={(e) => onChange(e.target.value)} />
       ) : field.type === "seg" || field.type === "chips" ? (
         <div role="group" aria-label={field.label} className="flex flex-wrap gap-2">
-          {[...options, ...typedOf(field, options, value)].map((o) => {
+          {(field.addable ? typedOf(field, [], value) : [...options, ...typedOf(field, options, value)]).map((o) => {
             const list = (value as string[] | undefined) ?? [];
             const on = field.type === "seg" ? value === o.value : list.includes(o.value);
             // "None" can't sit alongside anything else
             const toggle = () =>
               onChange(field.type === "seg" ? o.value : on ? list.filter((v) => v !== o.value) : o.value === "None" ? ["None"] : [...list.filter((v) => v !== "None"), o.value]);
             return (
-              <button key={o.value} type="button" aria-pressed={on} disabled={disabled} onClick={toggle} className={pill}>
+              <button key={o.value} type="button" aria-pressed={on} aria-label={field.addable ? `Remove ${o.label}` : undefined} disabled={disabled} onClick={toggle} className={cn(pill, field.addable && "inline-flex items-center gap-1.5")}>
                 {o.label}
+                {field.addable && !disabled && <XIcon className="size-3.5" />}
               </button>
             );
           })}
           {field.addable && !disabled && (
             <Input
               aria-label={`Add to ${field.label.toLowerCase()}`}
-              placeholder="Type another and press Enter"
+              placeholder={((value as string[] | undefined) ?? []).length ? "Add another and press Enter" : "Type a language and press Enter"}
               maxLength={50}
               className="h-10 rounded-lg"
               onKeyDown={(e) => {

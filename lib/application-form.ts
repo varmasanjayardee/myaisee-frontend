@@ -30,7 +30,7 @@ export interface FormField {
   help?: string;
   /** select: type to search the options; only an option can be kept */
   search?: boolean;
-  /** chips: values can also be typed in */
+  /** chips: no preset pills; values are typed in and show as removable tags */
   addable?: boolean;
   /** Shown (and required) only when this returns true */
   when?: (values: Values) => boolean;
@@ -121,7 +121,7 @@ export const APPLICATION_SECTIONS: FormSection[] = [
       },
       { key: "nationality", label: "Nationality", type: "select", required: true, search: true, options: NATIONALITIES },
       { key: "mother_tongue", label: "Mother tongue", type: "select", required: true, options: LANGUAGES },
-      { key: "home_languages", label: "Languages spoken at home", type: "chips", required: true, addable: true, options: LANGUAGES.slice(0, 8) },
+      { key: "home_languages", label: "Languages spoken at home", type: "chips", required: true, addable: true, help: "Add each language one at a time" },
       { key: "grade", label: "Applying for", type: "select", required: true, options: "grades", help: "Choose the campus first" },
       { key: "academic_year", label: "Academic year", type: "select", required: true, options: "academic_years", help: "Choose the campus first" },
       { key: "child_photo", label: "Recent photograph of the child", type: "file", required: true, help: "Used on the visit pass and the Atlas ID" },
