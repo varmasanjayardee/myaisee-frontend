@@ -64,7 +64,8 @@ export const ROLE_ACCENTS: Record<Dashboard, Accent[]> = {
   finance: ["teal"],
   transport: ["gold", ...SHARED],
   admission: ["rose", ...SHARED],
-  visitor: ["violet", ...SHARED],
+  // Ocean is the gate app's navy, so it comes first
+  visitor: ["ocean", "violet", "crimson", "orchid", "harbor"],
 };
 
 /** The user's pick if this dashboard offers it, else the dashboard's default */

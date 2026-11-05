@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { page } from "./admission.schema";
+import { page, visitRowSchema } from "./admission.schema";
 
 // keyed-backend admission/ staff/visitors/* (visitor manager or admin)
 
@@ -23,6 +23,14 @@ export const visitorSchema = z.object({
   party_size: z.number(),
   id_type: z.string(),
   id_last4: z.string(),
+  id_document_name: z.string(),
+  id_document_url: z.string().nullable(),
+  address: z.string(),
+  photo_url: z.string().nullable(),
+  visitor_type: z.enum(["parent", "other"]),
+  student_name: z.string(),
+  guardian_relationship: z.string(),
+  gate: z.string(),
   vehicle_number: z.string(),
   expected_at: z.string(),
   pass_code: z.string(),
@@ -42,8 +50,30 @@ export const visitorSchema = z.object({
 });
 export type Visitor = z.infer<typeof visitorSchema>;
 
+export const visitorPassSchema = visitorSchema.extend({ qr: z.string() });
+
+export const parentLookupSchema = z.object({
+  students: z.array(z.object({ id: z.number(), name: z.string(), admission_number: z.string().nullable(), class: z.string() })),
+  guardians: z.array(z.object({ id: z.number(), name: z.string(), relationship: z.string(), photo_url: z.string().nullable() })),
+});
+export type ParentLookup = z.infer<typeof parentLookupSchema>;
+
+export const keeperSchema = z.object({
+  name: z.string(),
+  email: z.string(),
+  role: z.string().optional(),
+  school: z.string().nullable().optional(),
+  campus: z.string().nullable().optional(),
+  work: z.object({ employee_id: z.string().nullable(), designation: z.string().nullable() }).partial().optional(),
+  gate: z.number().nullable(),
+  gate_name: z.string(),
+  gates: z.array(z.object({ id: z.number(), name: z.string() })),
+});
+
 export const visitorPageSchema = page(visitorSchema).extend({
   counts: z.record(z.enum([...VISITOR_STATUSES, "all"]), z.number()),
+  admission_visits: z.array(visitRowSchema),
+  admission_counts: z.object({ booked: z.number(), attended: z.number() }),
 });
 
 const choice = z.object({ value: z.string(), label: z.string() });
@@ -56,6 +86,14 @@ export const visitorOptionsSchema = z.object({
   hosts: z.array(z.object({ id: z.number(), name: z.string(), role: z.string(), campus: z.number().nullable() })),
 });
 export type VisitorOptions = z.infer<typeof visitorOptionsSchema>;
+
+export const gateTodaySchema = z.object({
+  admission_count: z.number(),
+  visit_count: z.number(),
+  check_in_count: z.number(),
+  check_out_count: z.number(),
+  visitor_list_count: z.number(),
+});
 
 export const gateDashboardSchema = z.object({
   today: z.object({

@@ -470,14 +470,15 @@ const ADMISSION: NavEntry[] = [
   { name: "Enquiries", href: "/admission/leads", icon: UserPlusIcon },
   { name: "Visits", href: "/admission/visits", icon: CalendarCheckIcon },
   { heading: "Set up" },
-  { name: "Fee plans", href: "/admission/fee-plans", icon: IndianRupeeIcon },
+  // { name: "Fee plans", href: "/admission/fee-plans", icon: IndianRupeeIcon },
   { name: "Visit slots", href: "/admission/slots", icon: CalendarDaysIcon },
 ];
 
 const VISITOR: NavEntry[] = [
-  { name: "Gate", href: "/visitor", icon: HomeIcon },
+  { name: "Today's Visitor", href: "/visitor", icon: HomeIcon },
+  { name: "Gate dashboard", href: "/visitor/dashboard", icon: LayoutDashboardIcon },
   { heading: "Today" },
-  { name: "Visitors", href: "/visitor/visitors", icon: IdCardIcon },
+  { name: "Visitor log", href: "/visitor/visitors", icon: IdCardIcon },
   { name: "Admission visits", href: "/visitor/admissions", icon: CalendarCheckIcon },
 ];
 

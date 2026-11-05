@@ -3,19 +3,19 @@
 import { useState } from "react";
 import Link from "next/link";
 import { format, formatDistanceToNowStrict, parseISO } from "date-fns";
-import { BanknoteIcon, CheckIcon, CopyIcon, KeyRoundIcon, LinkIcon, Loader2Icon, PencilLineIcon, RotateCcwIcon, UploadIcon } from "lucide-react";
+import { BanknoteIcon, CheckIcon, CopyIcon, KeyRoundIcon, LinkIcon, Loader2Icon, PencilLineIcon, /* RotateCcwIcon, */ UploadIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useToday } from "@/hooks/use-today";
 import { formatCurrency, isClosed, OUTCOMES } from "@/lib/admission";
 import { cn } from "@/lib/utils";
 import type { AccountsCreated, ApplicationDetail } from "@/schemas/admission.schema";
-import { FeePlanForm } from "./fee-plans";
-import { SideDrawer } from "./side-drawer";
+// import { FeePlanForm } from "./fee-plans";
+// import { SideDrawer } from "./side-drawer";
 import {
   useCheckIn,
-  useChildFeePlans,
-  useDeleteFeePlan,
+  // useChildFeePlans,
+  // useDeleteFeePlan,
   useConfirmForFamily,
   useCreateAccounts,
   useDecide,
@@ -23,7 +23,7 @@ import {
   useFamilySlots,
   useOfferForFamily,
   useOfflinePayment,
-  useReviewReceipt,
+  // useReviewReceipt,
   useAptitudeTestTaken,
   useScheduleAptitudeTest,
   useOptions,
@@ -133,9 +133,9 @@ function PaymentPanel({ app, leadId, kind }: { app: App; leadId: number; kind: "
   const fees = useFamilyFees(leadId, app.id);
   const total = fees.data?.[kind].total;
   const group = fees.data?.[kind];
-  const custom = useChildFeePlans(app.id).data?.find((p) => p.kind === kind) ?? null;
-  const useDefault = useDeleteFeePlan();
-  const [editing, setEditing] = useState(false);
+  // const custom = useChildFeePlans(app.id).data?.find((p) => p.kind === kind) ?? null;
+  // const useDefault = useDeleteFeePlan();
+  // const [editing, setEditing] = useState(false);
 
   return (
     <Panel title={`Waiting for the ${fee}${total ? ` of ${formatCurrency(total)}` : ""}`}>
@@ -173,6 +173,7 @@ function PaymentPanel({ app, leadId, kind }: { app: App; leadId: number; kind: "
         </ul>
       )}
       {/* A custom fee replaces the campus default for this child only */}
+      {/*
       <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
         <span className="text-muted-foreground">{group?.custom ? `Custom ${fee} for ${app.first_name}.` : group?.plan_id ? `Campus default ${fee}.` : `No ${fee} plan for their campus, year and grade.`}</span>
         <Button size="sm" variant="outline" onClick={() => setEditing(true)}>
@@ -186,7 +187,9 @@ function PaymentPanel({ app, leadId, kind }: { app: App; leadId: number; kind: "
           </Button>
         )}
       </div>
+      */}
       {total && !receipt && <TakePayment leadId={leadId} childId={app.id} kind={kind} />}
+      {/*
       <SideDrawer
         open={editing}
         onOpenChange={setEditing}
@@ -195,16 +198,17 @@ function PaymentPanel({ app, leadId, kind }: { app: App; leadId: number; kind: "
       >
         {editing && <FeePlanForm plan={custom} child={app.id} kind={kind} copy={group?.items} onDone={() => setEditing(false)} />}
       </SideDrawer>
+      */}
     </Panel>
   );
 }
 
 /** Approve (the fee is paid, the step completes) or reject with a note the family sees */
 function ReceiptReview({ payment }: { payment: App["payments"][number] }) {
-  const review = useReviewReceipt();
-  const [rejecting, setRejecting] = useState(false);
-  const [note, setNote] = useState("");
-  const busy = review.isPending;
+  // const review = useReviewReceipt();
+  // const [rejecting, setRejecting] = useState(false);
+  // const [note, setNote] = useState("");
+  // const busy = review.isPending;
 
   return (
     <div className="rounded-xl border bg-background p-4">
@@ -218,8 +222,9 @@ function ReceiptReview({ payment }: { payment: App["payments"][number] }) {
           </a>
         )}
       </p>
-      <p className="mt-1 text-xs text-muted-foreground">Match it against the bank statement before approving. Approving marks the fee paid and moves them on.</p>
+      {/* <p className="mt-1 text-xs text-muted-foreground">Match it against the bank statement before approving. Approving marks the fee paid and moves them on.</p> */}
 
+      {/*
       {rejecting ? (
         <form
           className="mt-3 space-y-2"
@@ -253,6 +258,7 @@ function ReceiptReview({ payment }: { payment: App["payments"][number] }) {
           </Button>
         </div>
       )}
+      */}
     </div>
   );
 }

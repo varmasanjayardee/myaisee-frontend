@@ -9,7 +9,8 @@ import { inputClass } from "@/components/admission/side-drawer";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { visitorInputSchema, type Visitor, type VisitorInput } from "@/schemas/visitor.schema";
-import { useSaveVisitor, useVisitorOptions } from "@/services/visitor.service";
+import { useSaveVisitor, useUploadVisitorFile, useVisitorOptions } from "@/services/visitor.service";
+import { PhotoField } from "./gate/photo-field";
 import { VisitorSummary } from "./ui";
 
 /** ISO -> the value a datetime-local input takes, in the browser's time zone */
@@ -44,6 +45,9 @@ export function VisitorForm({ visitor, onDone }: { visitor?: Visitor; onDone: ()
   }));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [checkIn, setCheckIn] = useState(false);
+  const [idFile, setIdFile] = useState<File | null>(null);
+  const [photo, setPhoto] = useState<File | null>(null);
+  const uploadId = useUploadVisitorFile();
   const locked = !!visitor && CLOSED.includes(visitor.status);
   const campuses = options.data?.campuses ?? [];
   const campus = form.campus ?? (campuses.length === 1 ? campuses[0].id : undefined);
@@ -54,7 +58,7 @@ export function VisitorForm({ visitor, onDone }: { visitor?: Visitor; onDone: ()
     setErrors((e) => Object.fromEntries(Object.entries(e).filter(([k]) => !(k in patch))));
   };
 
-  const submit = (walkIn: boolean) => {
+  const submit = async (walkIn: boolean) => {
     const parsed = visitorInputSchema.safeParse({ ...form, campus });
     if (!parsed.success) {
       setErrors(Object.fromEntries(parsed.error.issues.map((i) => [String(i.path[0]), i.message])));
@@ -65,7 +69,15 @@ export function VisitorForm({ visitor, onDone }: { visitor?: Visitor; onDone: ()
       return;
     }
     setCheckIn(walkIn);
-    const values = { ...parsed.data, expected_at: new Date(parsed.data.expected_at).toISOString(), ...(walkIn && { check_in: true }) };
+    let idDocument = {};
+    try {
+      if (photo) idDocument = { photo_key: await uploadId.mutateAsync({ kind: "photo", file: photo }) };
+      if (idFile) idDocument = { ...idDocument, id_document_key: await uploadId.mutateAsync({ kind: "id_proof", file: idFile }), id_document_name: idFile.name };
+    } catch (error) {
+      setErrors({ id_document: (error as Error).message });
+      return;
+    }
+    const values = { ...parsed.data, ...idDocument, expected_at: new Date(parsed.data.expected_at).toISOString(), ...(walkIn && { check_in: true }) };
     save.mutate(
       { id: visitor?.id, values },
       {
@@ -87,7 +99,7 @@ export function VisitorForm({ visitor, onDone }: { visitor?: Visitor; onDone: ()
     );
   };
 
-  const field = (name: keyof VisitorInput, label: string, input: React.ReactNode, optional = false) => (
+  const field = (name: keyof VisitorInput | "id_document", label: string, input: React.ReactNode, optional = false) => (
     <label className="block text-sm">
       <span className="font-medium">{label}</span>
       {optional && <span className="text-muted-foreground"> (optional)</span>}
@@ -192,7 +204,8 @@ export function VisitorForm({ visitor, onDone }: { visitor?: Visitor; onDone: ()
 
         <fieldset className="space-y-3" disabled={locked}>
           <legend className="mb-1 text-sm font-semibold">At the gate</legend>
-          <p className="mb-3 text-sm text-muted-foreground">Only the last 4 characters of an ID are kept.</p>
+          <PhotoField name={form.name || "Visitor"} savedSrc={visitor?.photo_url} onChange={setPhoto} />
+          <p className="mb-3 text-sm text-muted-foreground">Keep the last 4 characters of the ID number, and upload a copy if your campus needs one.</p>
           <div className="grid gap-3 sm:grid-cols-2">
             {field(
               "id_type",
@@ -221,6 +234,35 @@ export function VisitorForm({ visitor, onDone }: { visitor?: Visitor; onDone: ()
               />,
               true
             )}
+            <div className="sm:col-span-2">
+              {field(
+                "id_document",
+                "Upload ID proof",
+                <>
+                  <input
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    className={cn(inputClass, "h-auto py-2")}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] ?? null;
+                      if (file && file.size > 10 * 1024 * 1024) {
+                        setErrors((errs) => ({ ...errs, id_document: "The file is larger than 10 MB." }));
+                        e.target.value = "";
+                        return;
+                      }
+                      setErrors((errs) => Object.fromEntries(Object.entries(errs).filter(([k]) => k !== "id_document")));
+                      setIdFile(file);
+                    }}
+                  />
+                  {visitor?.id_document_url && !idFile && (
+                    <a href={visitor.id_document_url} target="_blank" rel="noreferrer" className="mt-1 block truncate text-xs font-medium text-brand underline">
+                      {visitor.id_document_name || "Open the saved copy"}
+                    </a>
+                  )}
+                </>,
+                true
+              )}
+            </div>
             {field("vehicle_number", "Vehicle", <input placeholder="DL 3C AB 1234" className={cn(inputClass, "uppercase")} value={form.vehicle_number} onChange={(e) => set({ vehicle_number: e.target.value })} {...invalid("vehicle_number")} />, true)}
             {field("badge_number", "Badge", <input placeholder="V-12" className={inputClass} value={form.badge_number} onChange={(e) => set({ badge_number: e.target.value })} {...invalid("badge_number")} />, true)}
           </div>
@@ -245,14 +287,14 @@ export function VisitorForm({ visitor, onDone }: { visitor?: Visitor; onDone: ()
           {locked ? "Close" : "Cancel"}
         </Button>
         {!locked && (
-          <Button type="submit" variant={visitor ? "default" : "outline"} disabled={save.isPending}>
-            {save.isPending && !checkIn && <Loader2Icon className="animate-spin" />}
+          <Button type="submit" variant={visitor ? "default" : "outline"} disabled={save.isPending || uploadId.isPending}>
+            {(save.isPending || uploadId.isPending) && !checkIn && <Loader2Icon className="animate-spin" />}
             {visitor ? "Save changes" : "Register for later"}
           </Button>
         )}
         {!visitor && (
-          <Button type="button" onClick={() => submit(true)} disabled={save.isPending}>
-            {save.isPending && checkIn ? <Loader2Icon className="animate-spin" /> : <LogInIcon />}
+          <Button type="button" onClick={() => submit(true)} disabled={save.isPending || uploadId.isPending}>
+            {(save.isPending || uploadId.isPending) && checkIn ? <Loader2Icon className="animate-spin" /> : <LogInIcon />}
             Check in now
           </Button>
         )}

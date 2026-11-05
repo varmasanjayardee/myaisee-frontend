@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { GateHome } from "@/components/visitor/dashboard";
+import { GateToday } from "@/components/visitor/gate/home";
 
-export const metadata: Metadata = { title: "Gate" };
+export const metadata: Metadata = { title: "Today's Visitor" };
 
 export default function Page() {
-  return <GateHome />;
+  return <GateToday />;
 }

@@ -3,6 +3,11 @@ import { toast } from "sonner";
 import { api } from "@/lib/api";
 import {
   gateDashboardSchema,
+  gateTodaySchema,
+  keeperSchema,
+  parentLookupSchema,
+  visitorPassSchema,
+  type ParentLookup,
   visitorOptionsSchema,
   visitorPageSchema,
   visitorSchema,
@@ -43,8 +48,18 @@ export function useGateDashboard() {
   });
 }
 
-export function useVisitorLog(filters: VisitorFilters) {
+/** Just today's counts, for the gate home */
+export function useGateToday() {
   return useQuery({
+    queryKey: ["visitor", "today"],
+    queryFn: () => api.get(`${base}/today/`).then((r) => gateTodaySchema.parse(r.data)),
+    refetchInterval: 60_000,
+  });
+}
+
+export function useVisitorLog(filters: VisitorFilters, enabled = true) {
+  return useQuery({
+    enabled,
     queryKey: visitorKeys.list(filters),
     queryFn: () => api.get(`${base}/`, { params: clean(filters) }).then((r) => visitorPageSchema.parse(r.data)),
     // The old page stays up while the next loads, so the table doesn't flash empty
@@ -62,7 +77,7 @@ export function useVisitorOptions() {
 }
 
 /** Anything the desk changes moves numbers on the gate dashboard and the log */
-function useRefreshGate() {
+export function useRefreshGate() {
   const queryClient = useQueryClient();
   return () => queryClient.invalidateQueries({ queryKey: visitorKeys.all });
 }
@@ -70,10 +85,63 @@ function useRefreshGate() {
 /** One mutation for register and edit: no id posts, an id patches */
 export function useSaveVisitor() {
   const refresh = useRefreshGate();
-  return useMutation<Visitor, Error, { id?: number; values: Partial<VisitorInput> & { check_in?: boolean } }>({
+  return useMutation<Visitor, Error, { id?: number; values: Partial<VisitorInput> & { check_in?: boolean; student?: number; guardian?: number; address?: string; photo_key?: string; id_document_key?: string; id_document_name?: string } }>({
     mutationFn: ({ id, values }) =>
       (id ? api.patch(`${base}/${id}/`, values) : api.post(`${base}/`, values)).then((r) => visitorSchema.parse(r.data)),
     onSuccess: refresh,
+  });
+}
+
+/** An ID copy or photo goes straight to storage; its key is saved with the visitor */
+export function useUploadVisitorFile() {
+  return useMutation<string, Error, { kind: "id_proof" | "photo"; file: File }>({
+    mutationFn: async ({ kind, file }) => {
+      const signed = await api
+        .post(`${base}/upload/sign/`, { kind, filename: file.name, content_type: file.type, size: file.size })
+        .then((r) => r.data as { key: string; upload_url: string; content_type: string });
+      const put = await fetch(signed.upload_url, { method: "PUT", headers: { "Content-Type": signed.content_type }, body: file }).catch(() => null);
+      if (!put?.ok) throw new Error("The file didn't reach storage. Check the connection and try again.");
+      return signed.key;
+    },
+  });
+}
+
+export function useVisitor(id: number) {
+  return useQuery({ queryKey: ["visitor", "one", id], queryFn: () => api.get(`${base}/${id}/`).then((r) => visitorSchema.parse(r.data)) });
+}
+
+export function useVisitorPass(id: number) {
+  return useQuery({ queryKey: ["visitor", "pass", id], queryFn: () => api.get(`${base}/${id}/pass/`).then((r) => visitorPassSchema.parse(r.data)) });
+}
+
+/** The pass as a PDF, saved through a temporary link (the request needs the login cookie) */
+export async function downloadVisitorPass(id: number, code: string) {
+  const blob = await api.get(`${base}/${id}/pass/`, { params: { output: "pdf" }, responseType: "blob" }).then((r) => r.data as Blob);
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `visit-pass-${code}.pdf`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+/** The family on the school's records with this mobile number */
+export function useParentLookup() {
+  return useMutation<ParentLookup, Error, string>({
+    mutationFn: (phone) => api.get(`${base}/parents/`, { params: { phone } }).then((r) => parentLookupSchema.parse(r.data)),
+  });
+}
+
+export function useKeeper() {
+  return useQuery({ queryKey: ["visitor", "keeper"], queryFn: () => api.get(`${base}/gates/`).then((r) => keeperSchema.parse(r.data)), staleTime: 5 * 60_000 });
+}
+
+export function useSetGate() {
+  const refresh = useRefreshGate();
+  return useMutation<unknown, Error, { gate?: number | null; name?: string }>({
+    mutationFn: (body) => api.post(`${base}/gates/`, body),
+    onSuccess: refresh,
+    onError: (error) => toast.error(error.message),
   });
 }
 
