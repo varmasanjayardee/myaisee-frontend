@@ -6,10 +6,8 @@ import { useRouter } from "next/navigation";
 import { format, parseISO } from "date-fns";
 import { UsersRoundIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { VisitRow } from "@/schemas/admission.schema";
 import type { Visitor } from "@/schemas/visitor.schema";
-import { useCheckIn } from "@/services/admission.service";
-import { useRefreshGate, useVisitor, useVisitorAction, useVisitorLog } from "@/services/visitor.service";
+import { useVisitor, useVisitorAction, useVisitorLog } from "@/services/visitor.service";
 import { PersonPhoto, Screen, ScreenSkeleton, TitleBar, TypeTag, primaryButton, secondaryButton } from "./ui";
 
 /** Registered and checked in within a minute: they walked in. Otherwise it was booked ahead. */
@@ -30,27 +28,6 @@ function Row({ v, action }: { v: Visitor; action?: React.ReactNode }) {
   );
 }
 
-/** An admission family's booked visit. Opens on the admission visits page, found by its gate pass code. */
-function AdmissionRow({ visit }: { visit: VisitRow }) {
-  const checkIn = useCheckIn();
-  const refresh = useRefreshGate();
-  return (
-    <div className="flex items-center gap-3 rounded-xl border p-3">
-      <Link href={`/visitor/admissions?when=all&q=${visit.gate_pass_code}`} className="flex min-w-0 flex-1 items-center gap-3">
-        <PersonPhoto name={visit.parent} src={null} />
-        <span className="min-w-0">
-          <b className="block truncate text-[15px] font-semibold">{visit.parent}</b>
-          <span className="block truncate text-sm text-muted-foreground">Admission visit <span aria-hidden>·</span> {visit.child} <span aria-hidden>·</span> {visit.start_time}</span>
-          <span className="block font-mono text-xs text-muted-foreground">{visit.gate_pass_code}</span>
-        </span>
-      </Link>
-      {visit.status === "booked" && (
-        <button type="button" disabled={checkIn.isPending} onClick={() => checkIn.mutate(visit.id, { onSuccess: refresh })} className={pillButton}>Check in</button>
-      )}
-    </div>
-  );
-}
-
 const pillButton = "h-9 shrink-0 rounded-full bg-brand px-4 text-xs font-bold tracking-wide text-brand-foreground uppercase transition-colors hover:bg-brand-hover disabled:opacity-50";
 
 /** Today's check-ins and check-outs, with one tap to check out */
@@ -59,13 +36,11 @@ export function VisitorList() {
   const log = useVisitorLog({ when: "today", status: show, page_size: 100 });
   const action = useVisitorAction();
   const counts = log.data?.counts;
-  const visits = log.data?.admission_visits ?? [];
-  const arrived = log.data?.admission_counts.attended ?? 0;
 
   const tile = (status: typeof show, label: string) => (
     <button type="button" aria-pressed={show === status} onClick={() => setShow(status)} className={cn("rounded-xl border p-4 text-left", show === status && "border-brand")}>
       <span className="flex items-start justify-between">
-        {counts ? <b className="text-3xl font-bold text-brand">{(counts[status] ?? 0) + (status === "checked_in" ? arrived : 0)}</b> : <span className="h-9 w-8 animate-pulse rounded bg-muted" />}
+        {counts ? <b className="text-3xl font-bold text-brand">{counts[status] ?? 0}</b> : <span className="h-9 w-8 animate-pulse rounded bg-muted" />}
         <UsersRoundIcon className="size-6 text-sky-600" />
       </span>
       <span className="mt-3 block text-sm text-muted-foreground">Today&apos;s</span>
@@ -93,8 +68,7 @@ export function VisitorList() {
               )}
             />
           ))}
-          {visits.map((visit) => <AdmissionRow key={visit.id} visit={visit} />)}
-          {!log.data?.results.length && !visits.length && <p className="py-10 text-center text-sm text-muted-foreground">{show === "checked_in" ? "Nobody is checked in." : "Nobody has checked out yet."}</p>}
+          {!log.data?.results.length && <p className="py-10 text-center text-sm text-muted-foreground">{show === "checked_in" ? "Nobody is checked in." : "Nobody has checked out yet."}</p>}
         </div>
       )}
     </Screen>
@@ -103,17 +77,17 @@ export function VisitorList() {
 
 /** Today's appointments: approve them, then check them in when they arrive */
 export function AppointmentList() {
-  const pending = useVisitorLog({ when: "today", status: "pending", page_size: 100 });
-  const approved = useVisitorLog({ when: "today", status: "approved", page_size: 100 });
-  const rows = [...(pending.data?.results ?? []), ...(approved.data?.results ?? [])];
-  const visits = approved.data?.admission_visits ?? [];
+  const log = useVisitorLog({ when: "today", status: "pending,approved", page_size: 100 });
+  const rows = log.data?.results ?? [];
   const action = useVisitorAction();
   const router = useRouter();
 
   return (
     <Screen>
       <TitleBar title="Appointment" back="/visitor" />
-      {pending.isLoading || approved.isLoading ? <ScreenSkeleton /> : (
+      {log.isLoading ? <ScreenSkeleton /> : log.error ? (
+        <p className="py-10 text-center text-sm text-muted-foreground">{log.error.message}</p>
+      ) : (
         <div className="space-y-3">
           {rows.map((v) => (
             <Row
@@ -124,8 +98,7 @@ export function AppointmentList() {
                 : <button type="button" disabled={action.isPending} onClick={() => action.mutate({ id: v.id, action: "check-in" }, { onSuccess: () => router.push(`/visitor/pass/${v.id}`) })} className={pillButton}>Check in</button>}
             />
           ))}
-          {visits.map((visit) => <AdmissionRow key={visit.id} visit={visit} />)}
-          {!rows.length && !visits.length && <p className="py-10 text-center text-sm text-muted-foreground">No appointments today.</p>}
+          {!rows.length && <p className="py-10 text-center text-sm text-muted-foreground">No appointments today.</p>}
         </div>
       )}
     </Screen>

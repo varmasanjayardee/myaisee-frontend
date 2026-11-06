@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { page, visitRowSchema } from "./admission.schema";
+import { page } from "./admission.schema";
 
 // keyed-backend admission/ staff/visitors/* (visitor manager or admin)
 
@@ -72,8 +72,6 @@ export const keeperSchema = z.object({
 
 export const visitorPageSchema = page(visitorSchema).extend({
   counts: z.record(z.enum([...VISITOR_STATUSES, "all"]), z.number()),
-  admission_visits: z.array(visitRowSchema),
-  admission_counts: z.object({ booked: z.number(), attended: z.number() }),
 });
 
 const choice = z.object({ value: z.string(), label: z.string() });
@@ -88,10 +86,7 @@ export const visitorOptionsSchema = z.object({
 export type VisitorOptions = z.infer<typeof visitorOptionsSchema>;
 
 export const gateTodaySchema = z.object({
-  admission_count: z.number(),
-  visit_count: z.number(),
-  check_in_count: z.number(),
-  check_out_count: z.number(),
+  appointment_count: z.number(),
   visitor_list_count: z.number(),
 });
 

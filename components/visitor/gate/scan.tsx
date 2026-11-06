@@ -6,9 +6,10 @@ import jsQR from "jsqr";
 import { Loader2Icon } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
+import { useVisitorAction } from "@/services/visitor.service";
 import { Screen, TitleBar, fieldClass, primaryButton } from "./ui";
 
-/** Point the camera at a visit pass, or type its code. Opens a visitor, or an admission family's visit. */
+/** Point the camera at a visit pass, or type its code. Someone expected is checked in; anyone else's record opens. */
 export function ScanPass() {
   const router = useRouter();
   const video = useRef<HTMLVideoElement>(null);
@@ -16,6 +17,13 @@ export function ScanPass() {
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const found = useRef(false);
+  const action = useVisitorAction();
+
+  // A failed pass stays in front of the camera: wait before reading it again
+  const retry = () => {
+    setBusy(false);
+    setTimeout(() => (found.current = false), 2500);
+  };
 
   const open = async (text: string) => {
     const pass = text.trim().toUpperCase();
@@ -24,16 +32,17 @@ export function ScanPass() {
     setBusy(true);
     try {
       const { data } = await api.get("/admission/staff/visitors/", { params: { when: "all", q: pass, page_size: 5 } });
-      const visitor = (data.results as { id: number; pass_code: string }[]).find((v) => v.pass_code === pass);
+      const visitor = (data.results as { id: number; pass_code: string; status: string }[]).find((v) => v.pass_code === pass);
+      if (visitor?.status === "pending" || visitor?.status === "approved") {
+        action.mutate({ id: visitor.id, action: "check-in" }, { onSuccess: () => router.push(`/visitor/pass/${visitor.id}`), onError: retry });
+        return;
+      }
       if (visitor) return router.push(`/visitor/list/${visitor.id}`);
-      // when=all: the admissions page opens on today, and this pass may be for another day
-      if ((data.admission_visits as { gate_pass_code: string }[]).some((v) => v.gate_pass_code === pass)) return router.push(`/visitor/admissions?when=all&q=${encodeURIComponent(pass)}`);
       toast.error(`No visit has the code ${pass}.`);
     } catch (error) {
       toast.error((error as Error).message);
     }
-    found.current = false;
-    setBusy(false);
+    retry();
   };
 
   useEffect(() => {
@@ -75,7 +84,7 @@ export function ScanPass() {
       cancelAnimationFrame(frame);
       stream?.getTracks().forEach((t) => t.stop());
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- starts once; `open` only reads refs and the router
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- starts once; `open` only reads refs, the router and a stable mutate
   }, []);
 
   return (

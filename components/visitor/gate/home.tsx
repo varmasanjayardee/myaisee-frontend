@@ -44,7 +44,7 @@ export function GateToday() {
         }
       />
       <div className="grid grid-cols-2 gap-3">
-        <Tile icon={CalendarDaysIcon} label="Appointment" value={number((today?.visit_count ?? 0) + (today?.admission_count ?? 0))} href="/visitor/appointments" />
+        <Tile icon={CalendarDaysIcon} label="Appointment" value={number(today?.appointment_count)} href="/visitor/appointments" />
         <Tile icon={UsersIcon} label="Visitor List" value={number(today?.visitor_list_count)} href="/visitor/list" />
         {/* No gate pass records yet: shown so the screen matches, locked until they exist */}
         <Tile icon={GraduationCapIcon} label="Student Gate Pass" value={<LockIcon className="size-4" aria-label="Not available yet" />} />

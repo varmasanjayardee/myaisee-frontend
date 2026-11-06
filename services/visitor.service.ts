@@ -77,7 +77,7 @@ export function useVisitorOptions() {
 }
 
 /** Anything the desk changes moves numbers on the gate dashboard and the log */
-export function useRefreshGate() {
+function useRefreshGate() {
   const queryClient = useQueryClient();
   return () => queryClient.invalidateQueries({ queryKey: visitorKeys.all });
 }
